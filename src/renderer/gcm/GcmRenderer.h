@@ -267,6 +267,7 @@ private:
 		TextureFormat_t::Enum m_Format;
 		RsxAllocation_t m_Alloc;
 		bool m_IsCubemap;
+		uint32 m_ZFunc;
 	};
 
 	struct RenderTargetResource_t
