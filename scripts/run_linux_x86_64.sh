@@ -13,6 +13,7 @@ exec > >(tee "$LOG_DIR/run_linux_x86_64.log") 2>&1
 
 if [ ! -x "$BIN" ]; then
 	echo "[ERROR] Binary not found: $BIN"
+
 	exit 2
 fi
 
@@ -22,4 +23,3 @@ cd "$BUILD_DIR/bin/linux-x86_64"
 
 echo ""
 echo "Run completed"
-

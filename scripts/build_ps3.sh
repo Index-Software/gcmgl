@@ -62,6 +62,7 @@ export BUILD_TYPE=Release
 
 if ! command -v python3 >/dev/null 2>&1; then
 	echo "[ERROR] python3 not found"
+
 	exit 1
 fi
 
@@ -74,6 +75,7 @@ echo ""
 echo "Compiling shaders..."
 python3 "$ROOT_DIR/shaders/compile_shaders.py" || {
 	echo "[ERROR] Shader compilation failed"
+
 	exit 1
 }
 echo "Shaders compiled"
@@ -82,12 +84,14 @@ echo ""
 echo "Building PS3 target..."
 make -C "$ROOT_DIR" -f "$ROOT_DIR/Makefile.ps3" || {
 	echo "[ERROR] PS3 build failed"
+
 	exit 1
 }
 echo "PS3 build finished"
 
 if [ ! -f "$BUILD_DIR/bin/ps3/gcmgl.self" ]; then
 	echo "[ERROR] gcmgl.self not produced, build failed"
+
 	exit 1
 fi
 
@@ -107,12 +111,14 @@ if [ -f "$ROOT_DIR/PARAM.SFO.xml" ]; then
 	if [ -f "$PS3DEV/bin/sfo.py" ]; then
 		python3 "$PS3DEV/bin/sfo.py" --fromxml "$ROOT_DIR/PARAM.SFO.xml" "$BUILD_DIR/bin/ps3/PARAM.SFO" || {
 			echo "[ERROR] sfo.py failed, PARAM.SFO not generated"
+
 			exit 1
 		}
 
 		echo "PARAM.SFO generated"
 	else
 		echo "[ERROR] sfo.py not available, PARAM.SFO not generated"
+
 		exit 1
 	fi
 else
@@ -138,4 +144,3 @@ echo "Package ready"
 
 echo ""
 echo "Build completed"
-
