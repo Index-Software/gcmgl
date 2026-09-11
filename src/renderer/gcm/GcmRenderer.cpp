@@ -1198,7 +1198,8 @@ TextureHandle CGcmRenderer::CreateTexture2D(
 		height,
 		format,
 		rsxAllocation,
-		false
+		false,
+		GCM_TEXTURE_ZFUNC_LESS
 	};
 	const TextureHandle hTexture = m_NextHandle++;
 	m_TextureResources.Insert(hTexture, textureResource);
@@ -1288,7 +1289,8 @@ TextureHandle CGcmRenderer::CreateTextureCube(
 		size,
 		format,
 		rsxAllocation,
-		true
+		true,
+		GCM_TEXTURE_ZFUNC_LESS
 	};
 	const TextureHandle hTexture = m_NextHandle++;
 	m_TextureResources.Insert(hTexture, textureResource);
@@ -1399,7 +1401,7 @@ void CGcmRenderer::SetTexture(
 		gcmWrapMode,
 		gcmWrapMode,
 		0,
-		GCM_TEXTURE_ZFUNC_LESS,
+		textureResource.m_ZFunc,
 		0);
 }
 
@@ -1407,7 +1409,25 @@ void CGcmRenderer::SetTextureCompareMode(
 	TextureHandle hTexture,
 	TextureCompareMode_t::Enum compareMode)
 {
-	Warning("[GCMRenderer] SetTextureCompareMode not implemented\n");
+	int32 textureIndex = m_TextureResources.Find(hTexture);
+	if (textureIndex == m_TextureResources.InvalidIndex())
+	{
+		Warning("[GCMRenderer] Invalid texture handle: %d\n", hTexture);
+
+		return;
+	}
+
+	TextureResource_t& textureResource = m_TextureResources.Element(
+		textureIndex);
+
+	if (compareMode == TextureCompareMode_t::RefToTexture)
+	{
+		textureResource.m_ZFunc = GCM_TEXTURE_ZFUNC_LEQUAL;
+	}
+	else
+	{
+		textureResource.m_ZFunc = GCM_TEXTURE_ZFUNC_LESS;
+	}
 }
 
 void CGcmRenderer::SetSampler(

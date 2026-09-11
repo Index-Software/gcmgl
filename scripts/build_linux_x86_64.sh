@@ -59,11 +59,13 @@ export BUILD_TYPE=Release
 
 if ! command -v cmake >/dev/null 2>&1; then
 	echo "[ERROR] cmake not found"
+
 	exit 1
 fi
 
 if ! command -v python3 >/dev/null 2>&1; then
 	echo "[ERROR] python3 not found"
+
 	exit 1
 fi
 
@@ -76,6 +78,7 @@ echo ""
 echo "Compiling shaders..."
 python3 "$ROOT_DIR/shaders/compile_shaders.py" || {
 	echo "[ERROR] Shader compilation failed"
+
 	exit 1
 }
 echo "Shaders compiled"
@@ -85,6 +88,7 @@ echo "Configuring build..."
 mkdir -p "$CMAKE_DIR"
 cmake "-DEXAMPLE=$EXAMPLE" -DBUILD_PS3=OFF -B "$CMAKE_DIR" -S "$ROOT_DIR" || {
 	echo "[ERROR] CMake configuration failed"
+
 	exit 1
 }
 echo "Build configured"
@@ -93,6 +97,7 @@ echo ""
 echo "Compiling..."
 make -j"$(nproc)" -C "$CMAKE_DIR" || {
 	echo "[ERROR] Compilation failed"
+
 	exit 1
 }
 echo "Compilation complete"
@@ -107,4 +112,3 @@ echo "Assets copied"
 
 echo ""
 echo "Build completed"
-

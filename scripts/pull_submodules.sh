@@ -28,6 +28,7 @@ done
 
 if ! command -v git >/dev/null 2>&1; then
 	printf '[ERROR] git not found\n' >&3
+
 	exit 1
 fi
 
@@ -55,10 +56,12 @@ update_submodule() {
 	if git -C "$dir" fetch && git -C "$dir" checkout "$branch"; then
 		git add "$dir"
 		printf '%s updated\n' "$name" >&3
+
 		return 0
 	fi
 
 	printf '[ERROR] %s update failed\n' "$name" >&3
+
 	return 1
 }
 
