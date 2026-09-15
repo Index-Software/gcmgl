@@ -30,11 +30,11 @@ static const vec_uchar16 s_SplatZPattern = { 8,9,10,11, 8,9,10,11, 8,9,10,11, 8,
 static const vec_uchar16 s_SplatWPattern = { 12,13,14,15, 12,13,14,15, 12,13,14,15, 12,13,14,15 };
 static const vec_uchar16 s_SplatXYZW1Pattern = { 0,1,2,3, 4,5,6,7, 8,9,10,11, 28,29,30,31 };
 
-static uint8 g_DstBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
-static uint8 g_SrcBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
-static uint8 g_IndexSrcBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
-static vec_float4 g_TransformBuffer[2][3] ALIGN128;
-static SpuBatchTransformJob_t g_Job ALIGN128;
+static uint8 s_DstBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
+static uint8 s_SrcBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
+static uint8 s_IndexSrcBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
+static vec_float4 s_TransformBuffer[2][3] ALIGN128;
+static SpuBatchTransformJob_t s_Job ALIGN128;
 
 // Flushes the current block and flips the buffer index
 static inline void flushDstBlock(
@@ -43,7 +43,7 @@ static inline void flushDstBlock(
 	uint32 blockBytes)
 {
 	uint32 tag = *pBufferIndex ? DST_TAG1 : DST_TAG0;
-	dmaPut(g_DstBuffer[*pBufferIndex], *pEffAddr, blockBytes, tag);
+	dmaPut(s_DstBuffer[*pBufferIndex], *pEffAddr, blockBytes, tag);
 	*pEffAddr += blockBytes;
 
 	*pBufferIndex ^= 1u;
@@ -307,33 +307,33 @@ static inline void transformFromBatchTransform(
 
 static void transformVertices()
 {
-	const uint32 vertexStride = g_Job.m_VertexStride;
-	const uint32 posOffset = g_Job.m_VertexPositionOffset;
+	const uint32 vertexStride = s_Job.m_VertexStride;
+	const uint32 posOffset = s_Job.m_VertexPositionOffset;
 	const uint32 verticesPerBlock = SPU_BUFFER_SIZE / vertexStride;
 	const uint32 blockBytes = verticesPerBlock * vertexStride;
-	uint64 dstEffAddr = g_Job.m_DstVerticesEffAddr;
+	uint64 dstEffAddr = s_Job.m_DstVerticesEffAddr;
 	uint32 dstBufferIndex = 0;
 	uint32 dstVertexCount = 0;
 
-	const uint32 vertexCount = g_Job.m_VertexCount;
+	const uint32 vertexCount = s_Job.m_VertexCount;
 	const uint32 srcFitsInOneBlock = (vertexCount <= verticesPerBlock);
 	if (srcFitsInOneBlock)
 	{
 		dmaGet(
-			g_SrcBuffer[0],
-			g_Job.m_SrcVerticesEffAddr,
+			s_SrcBuffer[0],
+			s_Job.m_SrcVerticesEffAddr,
 			(vertexCount * vertexStride + 15u) & ~15u,
 			SRC_TAG0);
 	}
 
-	dmaGet(g_TransformBuffer[0], g_Job.m_TransformsEffAddr, 48, MATRIX_TAG0);
+	dmaGet(s_TransformBuffer[0], s_Job.m_TransformsEffAddr, 48, MATRIX_TAG0);
 
 	if (srcFitsInOneBlock)
 	{
 		waitForTag(1u << SRC_TAG0);
 	}
 
-	for (uint32 batchIndex = 0; batchIndex < g_Job.m_BatchCount; batchIndex++)
+	for (uint32 batchIndex = 0; batchIndex < s_Job.m_BatchCount; batchIndex++)
 	{
 		const uint32 transformBufferIndex = batchIndex & 1u;
 		const uint32 nextTransformBufferIndex = transformBufferIndex ^ 1u;
@@ -341,11 +341,11 @@ static void transformVertices()
 		const uint32 nextTransformTag = nextTransformBufferIndex ? MATRIX_TAG1 : MATRIX_TAG0;
 
 		// Prefetch next transform
-		if (batchIndex + 1u < g_Job.m_BatchCount)
+		if (batchIndex + 1u < s_Job.m_BatchCount)
 		{
-			uint64 nextTransformEffAddr = g_Job.m_TransformsEffAddr + (batchIndex + 1u) * g_Job.m_TransformStride;
+			uint64 nextTransformEffAddr = s_Job.m_TransformsEffAddr + (batchIndex + 1u) * s_Job.m_TransformStride;
 			dmaGet(
-				g_TransformBuffer[nextTransformBufferIndex],
+				s_TransformBuffer[nextTransformBufferIndex],
 				nextTransformEffAddr,
 				48,
 				nextTransformTag);
@@ -356,9 +356,9 @@ static void transformVertices()
 		vec_float4 matrix[4];
 		transformFromBatchTransform(
 			matrix,
-			g_TransformBuffer[transformBufferIndex]);
+			s_TransformBuffer[transformBufferIndex]);
 		const vec_float4* pMatrix = matrix;
-		uint64 srcEffAddr = g_Job.m_SrcVerticesEffAddr;
+		uint64 srcEffAddr = s_Job.m_SrcVerticesEffAddr;
 		uint32 srcBufferIndex = 0;
 		uint32 srcVertexCount = 0;
 
@@ -369,7 +369,7 @@ static void transformVertices()
 			vertexCountsBuffer[0] = verticesPerBlock;
 			vertexCountsBuffer[1] = 0;
 			dmaGet(
-				g_SrcBuffer[0],
+				s_SrcBuffer[0],
 				srcEffAddr,
 				vertexCountsBuffer[0] * vertexStride,
 				SRC_TAG0);
@@ -403,7 +403,7 @@ static void transformVertices()
 					uint32 pendingCountBytes = (pendingCount * vertexStride + 15u) & ~15u;
 					uint32 nextSrcTag = (srcBufferIndex ^ 1u) ? SRC_TAG1 : SRC_TAG0;
 					dmaGet(
-						g_SrcBuffer[srcBufferIndex ^ 1u],
+						s_SrcBuffer[srcBufferIndex ^ 1u],
 						srcEffAddr,
 						pendingCountBytes,
 						nextSrcTag);
@@ -424,8 +424,8 @@ static void transformVertices()
 
 				for (uint32 k = 0; k < 4; k++)
 				{
-					pSrc[k] = g_SrcBuffer[srcBufferIndex] + (srcVertexCount + i + k) * vertexStride;
-					pDst[k] = g_DstBuffer[dstBufferIndex] + (dstVertexCount + i + k) * vertexStride;
+					pSrc[k] = s_SrcBuffer[srcBufferIndex] + (srcVertexCount + i + k) * vertexStride;
+					pDst[k] = s_DstBuffer[dstBufferIndex] + (dstVertexCount + i + k) * vertexStride;
 					copyVertex(pDst[k], pSrc[k], vertexStride);
 					positions[k] = loadPosition(pSrc[k] + posOffset);
 				}
@@ -435,8 +435,8 @@ static void transformVertices()
 
 			for (uint32 i = alignedCount; i < chunkCount; i++)
 			{
-				uint8* pSrc = g_SrcBuffer[srcBufferIndex] + (srcVertexCount + i) * vertexStride;
-				uint8* pDst = g_DstBuffer[dstBufferIndex] + (dstVertexCount + i) * vertexStride;
+				uint8* pSrc = s_SrcBuffer[srcBufferIndex] + (srcVertexCount + i) * vertexStride;
+				uint8* pDst = s_DstBuffer[dstBufferIndex] + (dstVertexCount + i) * vertexStride;
 				copyVertex(pDst, pSrc, vertexStride);
 
 				vec_float4 pos = transformVertex(
@@ -472,7 +472,7 @@ static void transformVertices()
 		waitForTag(1u << dstTag);
 
 		uint32 alignedBytes = (dstVertexCount * vertexStride + 15u) & ~15u;
-		dmaPut(g_DstBuffer[dstBufferIndex], dstEffAddr, alignedBytes, dstTag);
+		dmaPut(s_DstBuffer[dstBufferIndex], dstEffAddr, alignedBytes, dstTag);
 	}
 
 	waitForTag((1u << DST_TAG0) | (1u << DST_TAG1));
@@ -510,27 +510,27 @@ static inline void processIndexChunk(
 
 static void processIndices()
 {
-	if (g_Job.m_IndexCount == 0)
+	if (s_Job.m_IndexCount == 0)
 	{
 		return;
 	}
 
-	const uint32 indexCount = g_Job.m_IndexCount;
+	const uint32 indexCount = s_Job.m_IndexCount;
 	const uint32 indicesPerBlock = SPU_BUFFER_SIZE / 4u;
 
 	uint32 loadCount = indexCount < indicesPerBlock ? indexCount : indicesPerBlock;
 	uint32 loadBytes = (loadCount * 4u + 15u) & ~15u;
-	dmaGet(g_IndexSrcBuffer[0], g_Job.m_SrcIndicesEffAddr, loadBytes, SRC_TAG0);
+	dmaGet(s_IndexSrcBuffer[0], s_Job.m_SrcIndicesEffAddr, loadBytes, SRC_TAG0);
 
 	waitForTag(1u << SRC_TAG0);
 
-	uint64 dstEffAddr = g_Job.m_DstIndicesEffAddr;
+	uint64 dstEffAddr = s_Job.m_DstIndicesEffAddr;
 	uint32 dstBufferIndex = 0;
 	uint32 dstIndexCount = 0;
 
-	for (uint32 batchIndex = 0; batchIndex < g_Job.m_BatchCount; batchIndex++)
+	for (uint32 batchIndex = 0; batchIndex < s_Job.m_BatchCount; batchIndex++)
 	{
-		const uint32 indexOffset = (uint32)((uint64)g_Job.m_BaseVertex + (uint64)batchIndex * g_Job.m_VertexCount);
+		const uint32 indexOffset = (uint32)((uint64)s_Job.m_BaseVertex + (uint64)batchIndex * s_Job.m_VertexCount);
 		const vec_uint4 indexOffsetSplat = spu_splats(indexOffset);
 
 		uint32 j = 0;
@@ -541,8 +541,8 @@ static void processIndices()
 			uint32 chunkCount = srcRemaining < dstRemaining ? srcRemaining : dstRemaining;
 
 			processIndexChunk(
-				(uint32*)g_DstBuffer[dstBufferIndex] + dstIndexCount,
-				(uint32*)g_IndexSrcBuffer[0] + j,
+				(uint32*)s_DstBuffer[dstBufferIndex] + dstIndexCount,
+				(uint32*)s_IndexSrcBuffer[0] + j,
 				chunkCount,
 				indexOffsetSplat);
 
@@ -563,7 +563,7 @@ static void processIndices()
 		waitForTag(1u << dstTag);
 
 		uint32 alignedBytes = (dstIndexCount * 4u + 15u) & ~15u;
-		dmaPut(g_DstBuffer[dstBufferIndex], dstEffAddr, alignedBytes, dstTag);
+		dmaPut(s_DstBuffer[dstBufferIndex], dstEffAddr, alignedBytes, dstTag);
 	}
 
 	waitForTag((1u << DST_TAG0) | (1u << DST_TAG1));
@@ -576,7 +576,7 @@ int main(uint64 jobEffAddr, uint64 arg1, uint64 arg2, uint64 arg3)
 		spu_read_signal1();
 
 		mfc_get(
-			&g_Job,
+			&s_Job,
 			jobEffAddr,
 			sizeof(SpuBatchTransformJob_t),
 			JOB_TAG,
@@ -585,12 +585,12 @@ int main(uint64 jobEffAddr, uint64 arg1, uint64 arg2, uint64 arg3)
 
 		waitForTag(1u << JOB_TAG);
 
-		if (g_Job.m_Command == SPU_BATCH_CMD_TERMINATE)
+		if (s_Job.m_Command == SPU_BATCH_CMD_TERMINATE)
 		{
-			g_Job.m_Command = SPU_BATCH_CMD_IDLE;
-			g_Job.m_Status = SPU_BATCH_STATUS_DONE;
+			s_Job.m_Command = SPU_BATCH_CMD_IDLE;
+			s_Job.m_Status = SPU_BATCH_STATUS_DONE;
 			mfc_put(
-				&g_Job,
+				&s_Job,
 				jobEffAddr,
 				sizeof(SpuBatchTransformJob_t),
 				JOB_TAG,
@@ -602,29 +602,29 @@ int main(uint64 jobEffAddr, uint64 arg1, uint64 arg2, uint64 arg3)
 			break;
 		}
 
-		if (g_Job.m_Command == SPU_BATCH_CMD_TRANSFORM)
+		if (s_Job.m_Command == SPU_BATCH_CMD_TRANSFORM)
 		{
-			g_Job.m_Status = SPU_BATCH_STATUS_BUSY;
+			s_Job.m_Status = SPU_BATCH_STATUS_BUSY;
 			transformVertices();
 
-			if (g_Job.m_Status != SPU_BATCH_STATUS_ERROR)
+			if (s_Job.m_Status != SPU_BATCH_STATUS_ERROR)
 			{
 				processIndices();
 			}
 
-			if (g_Job.m_Status != SPU_BATCH_STATUS_ERROR)
+			if (s_Job.m_Status != SPU_BATCH_STATUS_ERROR)
 			{
-				g_Job.m_Status = SPU_BATCH_STATUS_DONE;
+				s_Job.m_Status = SPU_BATCH_STATUS_DONE;
 			}
 		}
 		else
 		{
-			g_Job.m_Status = SPU_BATCH_STATUS_ERROR;
+			s_Job.m_Status = SPU_BATCH_STATUS_ERROR;
 		}
 
-		g_Job.m_Command = SPU_BATCH_CMD_IDLE;
+		s_Job.m_Command = SPU_BATCH_CMD_IDLE;
 		mfc_put(
-			&g_Job,
+			&s_Job,
 			jobEffAddr,
 			sizeof(SpuBatchTransformJob_t),
 			JOB_TAG,
@@ -633,7 +633,7 @@ int main(uint64 jobEffAddr, uint64 arg1, uint64 arg2, uint64 arg3)
 
 		waitForTag(1u << JOB_TAG);
 
-		spu_thread_send_event(0, g_Job.m_Status, 0);
+		spu_thread_send_event(0, s_Job.m_Status, 0);
 	}
 
 	return 0;
