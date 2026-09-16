@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "WindowManager.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 
 CWindowManager::CWindowManager() :
 	m_WindowBackend(WindowBackendGlfw),

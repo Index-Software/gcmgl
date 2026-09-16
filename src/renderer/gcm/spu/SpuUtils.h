@@ -13,7 +13,7 @@
 
 #include <spu_intrinsics.h>
 #include <spu_mfcio.h>
-#include "tier0/platform.h"
+#include "platform.h"
 
 static INLINE void waitForTag(uint32 mask)
 {

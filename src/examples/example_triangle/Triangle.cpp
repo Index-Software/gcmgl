@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Main.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 #include "window/WindowManager.h"
 #include "renderer/Renderer.h"
 #include "utils/Time.h"

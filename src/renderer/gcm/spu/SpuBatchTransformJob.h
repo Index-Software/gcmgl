@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "tier0/platform.h"
+#include "platform.h"
 
 #ifdef __cplusplus
 extern "C"

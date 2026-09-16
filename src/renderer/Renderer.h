@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "tier0/platform.h"
+#include "platform.h"
 #include "utils/Color.h"
 #include "mathsfury/Matrix4.h"
 #include "mathsfury/Vector3.h"

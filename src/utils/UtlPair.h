@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "tier0/platform.h"
+#include "platform.h"
 
 template <typename T1, typename T2>
 struct UtlPair_t

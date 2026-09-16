@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "tier0/platform.h"
+#include "platform.h"
 #include "utils/FixedString.h"
 #include "utils/UtlVector.h"
 
