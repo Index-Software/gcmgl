@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "GlBatchRenderer.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 #include "mathsfury/Maths.h"
 #include <glad/gl.h>
 #include <string.h>

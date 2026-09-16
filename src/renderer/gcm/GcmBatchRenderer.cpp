@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "GcmBatchRenderer.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 #include "mathsfury/Maths.h"
 #include "Main.h"
 #ifdef GCMGL_DIAGNOSTICS

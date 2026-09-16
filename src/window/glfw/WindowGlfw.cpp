@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "WindowGlfw.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 #include "utils/UtlMemory.h"
 
 CWindowGlfw::CWindowGlfw() :

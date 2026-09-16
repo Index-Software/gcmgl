@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "SpuBatchTransformManager.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 #include "platform/ps3/spu/SpuUtils.h"
 #include "utils/UtlMemory.h"
 #include "renderer/Renderer.h"

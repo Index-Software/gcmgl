@@ -8,7 +8,7 @@
 
 #include "GlRenderer.h"
 #include "GlBatchRenderer.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 #include "utils/Utils.h"
 #include "utils/UtlMemory.h"
 #include "mathsfury/Maths.h"

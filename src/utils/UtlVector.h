@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "tier0/platform.h"
-#include "tier0/dbg.h"
+#include "platform.h"
+#include "dbg.h"
 
 template <class T>
 class CUtlVector

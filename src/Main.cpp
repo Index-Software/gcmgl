@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Main.h"
-#include "tier0/dbg.h"
+#include "dbg.h"
 #include "window/WindowManager.h"
 #include "window/Window.h"
 #include "renderer/Renderer.h"

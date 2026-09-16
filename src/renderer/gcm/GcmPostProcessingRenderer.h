@@ -12,7 +12,7 @@
 #pragma once
 
 #include <rsx/rsx.h>
-#include "tier0/platform.h"
+#include "platform.h"
 #include "utils/RsxHeap.h"
 
 struct GcmPostProcessState_t
