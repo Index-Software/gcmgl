@@ -275,11 +275,11 @@ Build using the provided scripts:
 
 - Linux (x86_64):
 ```bash
-./scripts/build_linux_x86_64.sh
+./tools/build_linux_x86_64.sh
 ```
 - PlayStation 3:
 ```bash
-./scripts/build_ps3.sh
+./tools/build_ps3.sh
 ```
 
 ## Examples

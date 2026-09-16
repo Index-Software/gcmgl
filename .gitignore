@@ -42,7 +42,8 @@ build/
 bin/
 
 # Tools
-tools/
+tools/slang/
+tools/netperf_listen.py
 
 # Shaders
 shaders/__pycache__
@@ -53,4 +54,3 @@ src/utils/DiagnosticsReporter.cpp
 src/utils/NetPerfReporter.h
 src/utils/NetPerfReporter.cpp
 src/utils/PerfTimer.h
-scripts/netperf_listen.py
