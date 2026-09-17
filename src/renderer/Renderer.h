@@ -286,6 +286,8 @@ struct PipelineState_t
 struct UniformBlockLayout_t
 {
 	CUtlVector<CFixedString> m_UniformNames;
+	CUtlVector<uint32> m_UniformOffsets;
+	CUtlVector<uint32> m_UniformSizes;
 	uint32 m_Binding;
 	uint32 m_Size;
 };

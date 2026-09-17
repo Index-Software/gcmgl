@@ -9,7 +9,7 @@
 	url = https://github.com/simd-everywhere/simde.git
 [submodule "thirdparty/OffsetAllocator"]
 	path = thirdparty/OffsetAllocator
-	url = https://github.com/sebbbi/OffsetAllocator
+	url = https://github.com/Index-Software/OffsetAllocator
 [submodule "thirdparty/slang"]
 	path = thirdparty/slang
 	url = https://github.com/shader-slang/slang
