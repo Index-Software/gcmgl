@@ -290,7 +290,8 @@ private:
 	struct UniformShadow_t
 	{
 		CUtlVector<uint8> m_Data;
-		bool m_IsDirty;
+		bool m_IsVertexDirty;
+		bool m_IsFragmentDirty;
 	};
 
 	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, UniformShadow_t> > m_ProgramUniformShadows;
