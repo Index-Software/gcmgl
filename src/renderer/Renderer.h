@@ -268,6 +268,16 @@ struct DepthStencilState_t
 	bool m_IsDepthWrite;
 };
 
+struct CullMode_t
+{
+	enum Enum
+	{
+		None,
+		Back,
+		Front
+	};
+};
+
 struct PipelineState_t
 {
 	uint64 m_IndexOffset;
@@ -635,6 +645,7 @@ public:
 
 	virtual void SetBlendState(const BlendState_t& state) = 0;
 	virtual void SetDepthStencilState(const DepthStencilState_t& state) = 0;
+	virtual void SetCullMode(CullMode_t::Enum mode) = 0;
 
 	virtual void ApplyVertexConstants(ShaderProgramHandle hProgram) = 0;
 	virtual void ApplyFragmentConstants(ShaderProgramHandle hProgram) = 0;

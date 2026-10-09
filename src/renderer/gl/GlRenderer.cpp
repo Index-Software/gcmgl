@@ -1451,6 +1451,27 @@ void CGlRenderer::SetDepthStencilState(const DepthStencilState_t& state)
 	glDepthMask(state.m_IsDepthWrite ? GL_TRUE : GL_FALSE);
 }
 
+void CGlRenderer::SetCullMode(CullMode_t::Enum mode)
+{
+	if (mode != CullMode_t::None)
+	{
+		glEnable(GL_CULL_FACE);
+	}
+	else
+	{
+		glDisable(GL_CULL_FACE);
+	}
+
+	if (mode == CullMode_t::Front)
+	{
+		glCullFace(GL_FRONT);
+	}
+	else if (mode == CullMode_t::Back)
+	{
+		glCullFace(GL_BACK);
+	}
+}
+
 void CGlRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 {
 	if (hProgram == 0)

@@ -1612,6 +1612,22 @@ void CGcmRenderer::SetDepthStencilState(const DepthStencilState_t& state)
 		state.m_IsDepthWrite ? GCM_TRUE : GCM_FALSE);
 }
 
+void CGcmRenderer::SetCullMode(CullMode_t::Enum mode)
+{
+	rsxSetCullFaceEnable(
+		context,
+		mode != CullMode_t::None ? GCM_TRUE : GCM_FALSE);
+
+	if (mode == CullMode_t::Front)
+	{
+		rsxSetCullFace(context, GCM_CULL_FRONT);
+	}
+	else if (mode == CullMode_t::Back)
+	{
+		rsxSetCullFace(context, GCM_CULL_BACK);
+	}
+}
+
 void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 {
 	if (hProgram == 0)

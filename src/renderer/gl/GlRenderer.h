@@ -134,6 +134,7 @@ public:
 	virtual void SetBlendState(const BlendState_t& state) GCMGL_OVERRIDE;
 	virtual void SetDepthStencilState(
 		const DepthStencilState_t& state) GCMGL_OVERRIDE;
+	virtual void SetCullMode(CullMode_t::Enum mode) GCMGL_OVERRIDE;
 
 	virtual void ApplyVertexConstants(
 		ShaderProgramHandle hProgram) GCMGL_OVERRIDE;

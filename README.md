@@ -155,6 +155,11 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `bool m_IsDepthTest`
 - `bool m_IsDepthWrite`
 
+### CullMode_t
+- `None`
+- `Back`
+- `Front`
+
 ### PipelineState_t
 - `uint64 m_IndexOffset`
 - `const CVertexLayout* m_pVertexLayout`
@@ -247,6 +252,7 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `int32 GetUniformBlockBinding(ShaderProgramHandle hProgram, const char* pBlockName)`
 - `void SetBlendState(const BlendState_t& state)`
 - `void SetDepthStencilState(const DepthStencilState_t& state)`
+- `void SetCullMode(CullMode_t::Enum mode)`
 - `void ExtractFrustumPlanes(const CMatrix4& mvp, Plane_t* pPlanes)`
 - `bool TestAABBFrustum(const CVector3& center, const CVector3& extent, const Plane_t* pPlanes)`
 - `void Draw(uint32 vertexCount, uint32 startVertex = 0, const CMatrix4* pViewProjection = GCMGL_NULL, const CVector3* pAABBCenter = GCMGL_NULL, const CVector3* pAABBExtent = GCMGL_NULL)`
