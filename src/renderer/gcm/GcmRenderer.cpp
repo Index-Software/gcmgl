@@ -85,31 +85,18 @@ bool CGcmRenderer::Init(const RendererDesc_t& rendererDesc)
 	m_ViewportOffset[2] = (m_Viewport.m_MaxDepth + m_Viewport.m_MinDepth) * 0.5f;
 	m_ViewportOffset[3] = 0.0f;
 
-	rsxSetViewport(
-		context,
-		uint16(m_Viewport.m_X),
-		uint16(m_Viewport.m_Y),
-		uint16(m_Viewport.m_Width),
-		uint16(m_Viewport.m_Height),
-		m_Viewport.m_MinDepth,
-		m_Viewport.m_MaxDepth,
-		m_ViewportScale,
-		m_ViewportOffset);
-	rsxSetScissor(
-		context,
-		uint16(m_Viewport.m_X),
-		uint16(m_Viewport.m_Y),
-		uint16(m_Viewport.m_Width),
-		uint16(m_Viewport.m_Height));
+	SetViewport(m_Viewport);
+	SetScissor(Rect_t(0, 0, display_width, display_height));
 
-	rsxSetDepthTestEnable(context, GCM_TRUE);
-	rsxSetDepthFunc(context, GCM_LEQUAL);
+	DepthStencilState_t depthStencilState;
+	depthStencilState.m_IsDepthTest = true;
+	depthStencilState.m_IsDepthWrite = true;
+	SetDepthStencilState(depthStencilState);
+
 	rsxSetShadeModel(context, GCM_SHADE_MODEL_SMOOTH);
-	rsxSetDepthWriteEnable(context, 1);
 	rsxSetFrontFace(context, GCM_FRONTFACE_CCW);
 
-	rsxSetCullFaceEnable(context, GCM_TRUE);
-	rsxSetCullFace(context, GCM_CULL_BACK);
+	SetCullMode(CullMode_t::Back);
 
 	rsxSetZMinMaxControl(context, 0, 1, 1);
 
@@ -292,16 +279,7 @@ void CGcmRenderer::SetEnvironment()
 
 	rsxSetColorMaskMrt(context, 0);
 
-	rsxSetViewport(
-		context,
-		uint16(m_Viewport.m_X),
-		uint16(m_Viewport.m_Y),
-		uint16(m_Viewport.m_Width),
-		uint16(m_Viewport.m_Height),
-		m_Viewport.m_MinDepth,
-		m_Viewport.m_MaxDepth,
-		m_ViewportScale,
-		m_ViewportOffset);
+	SetViewport(m_Viewport);
 
 	SetScissor(Rect_t(0, 0, display_width, display_height));
 
@@ -310,13 +288,14 @@ void CGcmRenderer::SetEnvironment()
 		rsxSetViewportClip(context, i, display_width, display_height);
 	}
 
-	rsxSetDepthTestEnable(context, GCM_TRUE);
-	rsxSetDepthFunc(context, GCM_LEQUAL);
-	rsxSetDepthWriteEnable(context, 1);
+	DepthStencilState_t depthStencilState;
+	depthStencilState.m_IsDepthTest = true;
+	depthStencilState.m_IsDepthWrite = true;
+	SetDepthStencilState(depthStencilState);
 
 	rsxSetFrontFace(context, GCM_FRONTFACE_CCW);
-	rsxSetCullFaceEnable(context, GCM_TRUE);
-	rsxSetCullFace(context, GCM_CULL_BACK);
+
+	SetCullMode(CullMode_t::Back);
 }
 
 void CGcmRenderer::BeginFrame()
@@ -405,12 +384,12 @@ void CGcmRenderer::GetFramebufferSize(uint32& width, uint32& height) const
 
 void CGcmRenderer::SetFullViewport()
 {
+	uint32 width;
+	uint32 height;
+	GetFramebufferSize(width, height);
+
 	SetViewport(
-		Viewport_t(
-			0.0f,
-			0.0f,
-			float32(display_width),
-			float32(display_height)));
+		Viewport_t(0.0f, 0.0f, float32(width), float32(height)));
 }
 
 void CGcmRenderer::SetViewport(const Viewport_t& viewport)
@@ -802,8 +781,27 @@ void CGcmRenderer::SetRenderTarget(RenderTargetHandle hRenderTarget, uint32 face
 {
 	if (hRenderTarget == 0)
 	{
-		setRenderTarget(curr_fb);
+		if (m_PostProcessState.m_pVertexProgram &&
+			m_PostProcessState.m_pQuadVertices &&
+			m_PostProcessState.m_pFragmentProgramBuffer)
+		{
+			CGcmPostProcessingRenderer::Begin(m_PostProcessState);
+		}
+		else
+		{
+			setRenderTarget(curr_fb);
+		}
+
+		uint32 width;
+		uint32 height;
+		GetFramebufferSize(width, height);
+
 		SetFullViewport();
+		SetScissor(Rect_t(0, 0, width, height));
+		for (int32 i = 0; i < 8; i++)
+		{
+			rsxSetViewportClip(context, i, width, height);
+		}
 
 		return;
 	}
@@ -835,12 +833,23 @@ void CGcmRenderer::SetRenderTarget(RenderTargetHandle hRenderTarget, uint32 face
 		}
 
 		rsxSetSurface(context, const_cast<gcmSurface*>(&renderTargetResource.m_Surface));
+
 		Viewport_t viewport(
 			0.0f,
 			0.0f,
 			float32(renderTargetResource.m_Width),
 			float32(renderTargetResource.m_Height));
 		SetViewport(viewport);
+		SetScissor(Rect_t(
+			0, 0, renderTargetResource.m_Width, renderTargetResource.m_Height));
+		for (int32 i = 0; i < 8; i++)
+		{
+			rsxSetViewportClip(
+				context,
+				i,
+				renderTargetResource.m_Width,
+				renderTargetResource.m_Height);
+		}
 	}
 }
 
