@@ -1380,6 +1380,12 @@ void CGcmRenderer::SetTexture(
 			texturePitch = textureResource.m_Width * 2;
 
 			break;
+		case TextureFormat_t::Depth24:
+		case TextureFormat_t::Depth24Stencil8:
+			gcmTextureFormat = GCM_TEXTURE_FORMAT_DEPTH24_D8 | GCM_TEXTURE_FORMAT_LIN;
+			texturePitch = (textureResource.m_Width * 4 + 63) & ~63;
+
+			break;
 		case TextureFormat_t::RGB8:
 		case TextureFormat_t::RGBA8:
 		default:
@@ -1427,7 +1433,7 @@ void CGcmRenderer::SetTexture(
 		0,
 		GCM_TEXTURE_LINEAR,
 		GCM_TEXTURE_LINEAR,
-		GCM_TEXTURE_CONVOLUTION_QUINCUNX);
+		0);
 
 	uint8 gcmWrapMode = GCM_TEXTURE_REPEAT;
 	if (wrapMode == TextureWrapMode_t::ClampToEdge)
@@ -1439,6 +1445,10 @@ void CGcmRenderer::SetTexture(
 		gcmWrapMode = GCM_TEXTURE_MIRRORED_REPEAT;
 	}
 
+	const bool isDepthTexture =
+		textureResource.m_Format == TextureFormat_t::Depth24 ||
+		textureResource.m_Format == TextureFormat_t::Depth24Stencil8;
+
 	rsxTextureWrapMode(
 		context,
 		slot,
@@ -1446,7 +1456,7 @@ void CGcmRenderer::SetTexture(
 		gcmWrapMode,
 		gcmWrapMode,
 		0,
-		textureResource.m_ZFunc,
+		isDepthTexture ? GCM_TEXTURE_ZFUNC_NEVER : textureResource.m_ZFunc,
 		0);
 }
 
