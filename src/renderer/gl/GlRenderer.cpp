@@ -23,9 +23,7 @@
 CGlRenderer::CGlRenderer() :
 	m_StagingIndex(0),
 	m_InstanceBufferIndex(0),
-	m_pWindow(GCMGL_NULL),
-	m_FBWidth(0),
-	m_FBHeight(0)
+	m_pWindow(GCMGL_NULL)
 {
 	for (int32 i = 0; i < s_MaxInstanceStagingBuffers; i++)
 	{
@@ -87,37 +85,21 @@ bool CGlRenderer::Init(const RendererDesc_t& rendererDesc)
 	m_ViewportOffset[2] = 0.5f;
 	m_ViewportOffset[3] = 0.0f;
 
-	glViewport(
-		static_cast<GLint>(m_Viewport.m_X),
-		static_cast<GLint>(m_Viewport.m_Y),
-		static_cast<GLsizei>(m_Viewport.m_Width),
-		static_cast<GLsizei>(m_Viewport.m_Height));
+	SetViewport(m_Viewport);
 
-	glScissor(
-		static_cast<GLint>(m_Viewport.m_X),
-		static_cast<GLint>(m_Viewport.m_Y),
-		static_cast<GLsizei>(m_Viewport.m_Width),
-		static_cast<GLsizei>(m_Viewport.m_Height));
+	SetScissor(Rect_t(0, 0, rendererDesc.m_Width, rendererDesc.m_Height));
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LEQUAL);
+	DepthStencilState_t depthStencilState;
+	depthStencilState.m_IsDepthTest = true;
+	depthStencilState.m_IsDepthWrite = true;
+	SetDepthStencilState(depthStencilState);
+
 	glShadeModel(GL_SMOOTH);
-	glDepthMask(GL_TRUE);
 	glFrontFace(GL_CCW);
 
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	SetCullMode(CullMode_t::Back);
 
 	glDepthRange(0.0, 1.0);
-
-	for (int32 i = 0; i < 8; i++)
-	{
-		glViewport(
-			0,
-			0,
-			static_cast<GLsizei>(rendererDesc.m_Width),
-			static_cast<GLsizei>(rendererDesc.m_Height));
-	}
 
 	glDisable(GL_CLIP_DISTANCE0);
 	glDisable(GL_CLIP_DISTANCE1);
@@ -240,21 +222,15 @@ void CGlRenderer::SetEnvironment()
 #endif
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-	glDepthMask(GL_TRUE);
+	DepthStencilState_t depthStencilState;
+	depthStencilState.m_IsDepthTest = true;
+	depthStencilState.m_IsDepthWrite = true;
+	SetDepthStencilState(depthStencilState);
 }
 
 void CGlRenderer::BeginFrame()
 {
-	if (m_pWindow)
-	{
-		int32 w;
-		int32 h;
-		glfwGetFramebufferSize(m_pWindow, &w, &h);
-		m_FBWidth = uint32(w);
-		m_FBHeight = uint32(h);
-
-		SetFullViewport();
-	}
+	SetFullViewport();
 
 	m_StateDirtyFlags = StateDirtyFlags_t::All;
 	m_InstanceBufferIndex = 0;
@@ -307,14 +283,33 @@ void CGlRenderer::Clear(
 
 void CGlRenderer::GetFramebufferSize(uint32& width, uint32& height) const
 {
-	width = m_FBWidth;
-	height = m_FBHeight;
+	if (m_pWindow)
+	{
+		int32 framebufferWidth;
+		int32 framebufferHeight;
+		glfwGetFramebufferSize(
+			m_pWindow,
+			&framebufferWidth,
+			&framebufferHeight);
+
+		width = uint32(framebufferWidth);
+		height = uint32(framebufferHeight);
+
+		return;
+	}
+
+	width = 0;
+	height = 0;
 }
 
 void CGlRenderer::SetFullViewport()
 {
+	uint32 width;
+	uint32 height;
+	GetFramebufferSize(width, height);
+
 	SetViewport(
-		Viewport_t(0.0f, 0.0f, float32(m_FBWidth), float32(m_FBHeight)));
+		Viewport_t(0.0f, 0.0f, float32(width), float32(height)));
 }
 
 void CGlRenderer::SetViewport(const Viewport_t& viewport)
@@ -537,7 +532,14 @@ void CGlRenderer::SetRenderTarget(
 	if (hRenderTarget == 0)
 	{
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		uint32 width;
+		uint32 height;
+		GetFramebufferSize(width, height);
+
 		SetFullViewport();
+
+		SetScissor(Rect_t(0, 0, width, height));
 
 		return;
 	}
@@ -588,11 +590,18 @@ void CGlRenderer::SetRenderTarget(
 			}
 		}
 
-		glViewport(
+		Viewport_t viewport(
+			0.0f,
+			0.0f,
+			float32(renderTargetResource.m_Width),
+			float32(renderTargetResource.m_Height));
+		SetViewport(viewport);
+
+		SetScissor(Rect_t(
 			0,
 			0,
 			renderTargetResource.m_Width,
-			renderTargetResource.m_Height);
+			renderTargetResource.m_Height));
 	}
 }
 

@@ -251,8 +251,6 @@ private:
 	CUtlMap<TextureHandle, TextureResource_t> m_TextureResources;
 	CUtlMap<RenderTargetHandle, RenderTargetResource_t> m_RenderTargetResources;
 	GLFWwindow* m_pWindow;
-	uint32 m_FBWidth;
-	uint32 m_FBHeight;
 	int32 m_InstanceBufferIndex;
 };
 
