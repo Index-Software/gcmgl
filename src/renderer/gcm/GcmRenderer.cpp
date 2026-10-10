@@ -86,6 +86,7 @@ bool CGcmRenderer::Init(const RendererDesc_t& rendererDesc)
 	m_ViewportOffset[3] = 0.0f;
 
 	SetViewport(m_Viewport);
+
 	SetScissor(Rect_t(0, 0, display_width, display_height));
 
 	DepthStencilState_t depthStencilState;
@@ -280,13 +281,6 @@ void CGcmRenderer::SetEnvironment()
 	rsxSetColorMaskMrt(context, 0);
 
 	SetViewport(m_Viewport);
-
-	SetScissor(Rect_t(0, 0, display_width, display_height));
-
-	for (int32 i = 0; i < 8; i++)
-	{
-		rsxSetViewportClip(context, i, display_width, display_height);
-	}
 
 	DepthStencilState_t depthStencilState;
 	depthStencilState.m_IsDepthTest = true;
@@ -797,7 +791,9 @@ void CGcmRenderer::SetRenderTarget(RenderTargetHandle hRenderTarget, uint32 face
 		GetFramebufferSize(width, height);
 
 		SetFullViewport();
+
 		SetScissor(Rect_t(0, 0, width, height));
+
 		for (int32 i = 0; i < 8; i++)
 		{
 			rsxSetViewportClip(context, i, width, height);
@@ -840,8 +836,10 @@ void CGcmRenderer::SetRenderTarget(RenderTargetHandle hRenderTarget, uint32 face
 			float32(renderTargetResource.m_Width),
 			float32(renderTargetResource.m_Height));
 		SetViewport(viewport);
+
 		SetScissor(Rect_t(
 			0, 0, renderTargetResource.m_Width, renderTargetResource.m_Height));
+
 		for (int32 i = 0; i < 8; i++)
 		{
 			rsxSetViewportClip(
@@ -1442,7 +1440,7 @@ void CGcmRenderer::SetTexture(
 		0,
 		GCM_TEXTURE_LINEAR,
 		GCM_TEXTURE_LINEAR,
-		0);
+		GCM_TEXTURE_CONVOLUTION_QUINCUNX);
 
 	uint8 gcmWrapMode = GCM_TEXTURE_REPEAT;
 	if (wrapMode == TextureWrapMode_t::ClampToEdge)

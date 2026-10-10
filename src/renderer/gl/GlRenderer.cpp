@@ -86,6 +86,7 @@ bool CGlRenderer::Init(const RendererDesc_t& rendererDesc)
 	m_ViewportOffset[3] = 0.0f;
 
 	SetViewport(m_Viewport);
+
 	SetScissor(Rect_t(0, 0, rendererDesc.m_Width, rendererDesc.m_Height));
 
 	DepthStencilState_t depthStencilState;
@@ -537,6 +538,7 @@ void CGlRenderer::SetRenderTarget(
 		GetFramebufferSize(width, height);
 
 		SetFullViewport();
+
 		SetScissor(Rect_t(0, 0, width, height));
 
 		return;
@@ -594,6 +596,7 @@ void CGlRenderer::SetRenderTarget(
 			float32(renderTargetResource.m_Width),
 			float32(renderTargetResource.m_Height));
 		SetViewport(viewport);
+
 		SetScissor(Rect_t(
 			0,
 			0,
