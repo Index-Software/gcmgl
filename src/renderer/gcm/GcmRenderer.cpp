@@ -302,12 +302,13 @@ void CGcmRenderer::SetEnvironment()
 		m_Viewport.m_MaxDepth,
 		m_ViewportScale,
 		m_ViewportOffset);
-	rsxSetScissor(
-		context,
-		uint16(m_Viewport.m_X),
-		uint16(m_Viewport.m_Y),
-		uint16(m_Viewport.m_Width),
-		uint16(m_Viewport.m_Height));
+
+	SetScissor(Rect_t(0, 0, display_width, display_height));
+
+	for (int32 i = 0; i < 8; i++)
+	{
+		rsxSetViewportClip(context, i, display_width, display_height);
+	}
 
 	rsxSetDepthTestEnable(context, GCM_TRUE);
 	rsxSetDepthFunc(context, GCM_LEQUAL);
