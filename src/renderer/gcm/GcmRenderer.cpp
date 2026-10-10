@@ -1572,6 +1572,8 @@ int32 CGcmRenderer::GetUniformBlockBinding(
 
 void CGcmRenderer::SetBlendState(const BlendState_t& state)
 {
+	m_PipelineState.m_BlendState = state;
+
 	if (state.m_IsEnabled)
 	{
 		rsxSetBlendEnable(context, GCM_TRUE);

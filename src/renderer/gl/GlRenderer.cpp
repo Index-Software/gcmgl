@@ -1418,6 +1418,8 @@ int32 CGlRenderer::GetUniformBlockBinding(
 
 void CGlRenderer::SetBlendState(const BlendState_t& state)
 {
+	m_PipelineState.m_BlendState = state;
+
 	if (state.m_IsEnabled)
 	{
 		glEnable(GL_BLEND);
@@ -1438,6 +1440,8 @@ void CGlRenderer::SetBlendState(const BlendState_t& state)
 
 void CGlRenderer::SetDepthStencilState(const DepthStencilState_t& state)
 {
+	m_PipelineState.m_DepthStencilState = state;
+
 	if (state.m_IsDepthTest)
 	{
 		glEnable(GL_DEPTH_TEST);
