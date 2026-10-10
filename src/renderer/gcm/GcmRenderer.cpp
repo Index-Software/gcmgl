@@ -348,7 +348,7 @@ void CGcmRenderer::Clear(
 	{
 		rsxSetClearColor(
 			context,
-			CColor::PackColor(color));
+			CColor::PackARGB(color));
 		gcmClearFlags |= GCM_CLEAR_R | GCM_CLEAR_G | GCM_CLEAR_B | GCM_CLEAR_A;
 	}
 
