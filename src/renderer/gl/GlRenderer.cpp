@@ -221,6 +221,7 @@ void CGlRenderer::SetEnvironment()
 #define GL_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
 #endif
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glEnable(GL_SCISSOR_TEST);
 
 	DepthStencilState_t depthStencilState;
 	depthStencilState.m_IsDepthTest = true;

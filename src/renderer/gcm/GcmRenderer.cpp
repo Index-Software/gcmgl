@@ -191,6 +191,7 @@ void CGcmRenderer::Shutdown()
 			m_StagingIndexBuffer[i].m_pPtr = GCMGL_NULL;
 		}
 	}
+
 	for (int32 i = 0; i < s_MaxInstanceStagingBuffers; i++)
 	{
 		if (m_InstanceBuffers[i].m_pPtr)

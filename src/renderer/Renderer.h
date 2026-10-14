@@ -634,6 +634,8 @@ public:
 	virtual UniformBlockLayoutHandle GetOrCreateUniformBlockLayout(
 		ShaderProgramHandle hProgram,
 		const UniformBlockLayout_t& layout) = 0;
+	virtual void DestroyUniformBlockLayout(
+		UniformBlockLayoutHandle hLayout) = 0;
 	virtual void SetConstantBuffer(
 		BufferHandle hBuffer,
 		UniformBlockLayoutHandle hLayout,
