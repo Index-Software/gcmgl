@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "Renderer.h"
+#include "dbg.h"
 #include "mathsfury/Maths.h"
 
 CRenderer::CRenderer() :
@@ -178,6 +179,43 @@ UniformBlockLayoutHandle CRenderer::CreateUniformBlockLayout(
 	m_UniformBlockLayouts.Insert(handle, layout);
 
 	return handle;
+}
+
+void CRenderer::DestroyUniformBlockLayout(
+	UniformBlockLayoutHandle hLayout)
+{
+	int32 layoutIndex = m_UniformBlockLayouts.Find(hLayout);
+	if (layoutIndex == m_UniformBlockLayouts.InvalidIndex())
+	{
+		Warning(
+			"[CRenderer] Invalid uniform block layout handle: %d\n",
+			hLayout);
+
+		return;
+	}
+
+	m_UniformBlockLayouts.Remove(hLayout);
+
+	for (int32 i = m_UniformLayoutCache.FirstInorder();
+		m_UniformLayoutCache.IsValidIndex(i);
+		i = m_UniformLayoutCache.NextInorder(i))
+	{
+		CUtlMap<uint32, UniformBlockLayoutHandle>& programCache =
+			m_UniformLayoutCache.Element(i);
+
+		for (int32 j = programCache.FirstInorder();
+			programCache.IsValidIndex(j);)
+		{
+			int32 next = programCache.NextInorder(j);
+
+			if (programCache.Element(j) == hLayout)
+			{
+				programCache.Remove(programCache.Key(j));
+			}
+
+			j = next;
+		}
+	}
 }
 
 void CRenderer::SetPipelineState(const PipelineState_t& state)
