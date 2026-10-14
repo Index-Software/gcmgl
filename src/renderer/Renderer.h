@@ -733,6 +733,8 @@ public:
 	virtual UniformBlockLayoutHandle GetOrCreateUniformBlockLayout(
 		ShaderProgramHandle hProgram,
 		const UniformBlockLayout_t& layout) GCMGL_OVERRIDE;
+	virtual void DestroyUniformBlockLayout(
+		UniformBlockLayoutHandle hLayout) GCMGL_OVERRIDE;
 
 	virtual void SetPipelineState(const PipelineState_t& state) GCMGL_OVERRIDE;
 	virtual void FlushPipelineState() GCMGL_OVERRIDE;
