@@ -163,7 +163,8 @@ class ShaderCompiler:
                     print(f"[ERROR] Failed to compile vertex: {error}")
 
             if fcg_file:
-                cmd = [cgcomp_path, "-f", "-Wcg", "-O0", str(fcg_file), str(fpo_path)]
+                # cgcomp defaults to fast precision (fp16); force fp32
+                cmd = [cgcomp_path, "-f", "-Wcg,-nofastprecision", str(fcg_file), str(fpo_path)]
 
                 try:
                     result = subprocess.run(
