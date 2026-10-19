@@ -58,7 +58,11 @@ bool CGcmRenderer::Init(const RendererDesc_t& rendererDesc)
 	}
 
 	m_pHostAddr = reinterpret_cast<void*>(hostAddr);
-	initScreen(m_pHostAddr, m_HostSize);
+	initScreen(
+		m_pHostAddr,
+		m_HostSize,
+		rendererDesc.m_Width,
+		rendererDesc.m_Height);
 
 	rsxSetColorMask(
 		context,
@@ -375,6 +379,11 @@ void CGcmRenderer::GetFramebufferSize(uint32& width, uint32& height) const
 {
 	width = display_width;
 	height = display_height;
+}
+
+float32 CGcmRenderer::GetAspectRatio() const
+{
+	return aspect_ratio;
 }
 
 void CGcmRenderer::SetFullViewport()

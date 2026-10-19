@@ -27,10 +27,14 @@ extern u32 *color_buffer[FRAME_BUFFER_COUNT];
 
 extern f32 aspect_ratio;
 
-void initVideoConfiguration();
+void initVideoConfiguration(u32 requested_width, u32 requested_height);
 void setRenderTarget(u32 index);
 void setDrawEnv();
-void initScreen(void *host_addr, u32 size);
+void initScreen(
+	void *host_addr,
+	u32 size,
+	u32 requested_width,
+	u32 requested_height);
 void waitFlip();
 void flip();
 void waitFinish();

@@ -48,6 +48,7 @@ public:
 	virtual void GetFramebufferSize(
 		uint32& width,
 		uint32& height) const GCMGL_OVERRIDE;
+	virtual float32 GetAspectRatio() const GCMGL_OVERRIDE;
 	virtual void SetFullViewport() GCMGL_OVERRIDE;
 	virtual void SetViewport(const Viewport_t& viewport) GCMGL_OVERRIDE;
 	virtual Viewport_t GetViewport() const GCMGL_OVERRIDE;

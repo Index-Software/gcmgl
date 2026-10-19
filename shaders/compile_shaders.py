@@ -164,7 +164,13 @@ class ShaderCompiler:
 
             if fcg_file:
                 # cgcomp defaults to fast precision (fp16); force fp32
-                cmd = [cgcomp_path, "-f", "-Wcg,-nofastprecision", str(fcg_file), str(fpo_path)]
+                cmd = [
+                    cgcomp_path,
+                    "-f",
+                    "-Wcg,-nofastprecision",
+                    str(fcg_file),
+                    str(fpo_path),
+                ]
 
                 try:
                     result = subprocess.run(
