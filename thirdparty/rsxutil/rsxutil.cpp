@@ -30,13 +30,15 @@ u32 *color_buffer[FRAME_BUFFER_COUNT];
 
 f32 aspect_ratio;
 
-static u32 sResolutionIds[] = {
-    VIDEO_RESOLUTION_960x1080,
-    VIDEO_RESOLUTION_720,
-    VIDEO_RESOLUTION_480,
-    VIDEO_RESOLUTION_576
+static u32 sFallbackResolutionIds[] = {
+	VIDEO_RESOLUTION_720,
+	VIDEO_RESOLUTION_1080,
+	VIDEO_RESOLUTION_960x1080,
+	VIDEO_RESOLUTION_480,
+	VIDEO_RESOLUTION_576
 };
-static size_t RESOLUTION_ID_COUNT = sizeof(sResolutionIds)/sizeof(u32);
+static size_t RESOLUTION_ID_COUNT =
+	sizeof(sFallbackResolutionIds) / sizeof(u32);
 
 static u32 sLabelVal = 1;
 
@@ -53,22 +55,56 @@ void waitFinish()
 	++sLabelVal;
 }
 
-void initVideoConfiguration()
+void initVideoConfiguration(u32 requested_width, u32 requested_height)
 {
     s32 rval = 0;
     s32 resId = 0;
+	u32 preferredResolution = VIDEO_RESOLUTION_720;
+	if (requested_height >= 1000)
+	{
+		preferredResolution = (requested_width > 960)
+			? VIDEO_RESOLUTION_1080
+			: VIDEO_RESOLUTION_960x1080;
+	}
+	else if (requested_height <= 480)
+	{
+		preferredResolution = VIDEO_RESOLUTION_480;
+	}
+	else if (requested_height <= 576)
+	{
+		preferredResolution = VIDEO_RESOLUTION_576;
+	}
+	bool foundResolution = false;
 
-    for (size_t i=0;i < RESOLUTION_ID_COUNT;i++) {
-        rval = videoGetResolutionAvailability(VIDEO_PRIMARY, sResolutionIds[i], VIDEO_ASPECT_AUTO, 0);
+    for (size_t i = 0; i <= RESOLUTION_ID_COUNT; i++) {
+		u32 candidateResolution = (i == 0)
+			? preferredResolution
+			: sFallbackResolutionIds[i - 1];
+		if (i > 0 && candidateResolution == preferredResolution)
+		{
+			continue;
+		}
+
+        rval = videoGetResolutionAvailability(
+			VIDEO_PRIMARY,
+			candidateResolution,
+			VIDEO_ASPECT_AUTO,
+			0);
         if (rval != 1) continue;
 
-        resId = sResolutionIds[i];
+        resId = candidateResolution;
         rval = videoGetResolution(resId, &vResolution);
-        if(!rval) break;
+		if (!rval)
+		{
+			foundResolution = true;
+			break;
+		}
     }
 
-    if(rval) {
-        printf("Error: videoGetResolutionAvailability failed. No usable resolution.\n");
+    if (!foundResolution)
+    {
+		printf("Error: no usable video resolution is available.\n");
+
         exit(1);
     }
 
@@ -196,14 +232,18 @@ void setDrawEnv()
 							   GCM_USER_CLIP_PLANE_DISABLE);
 }
 
-void initScreen(void *host_addr,u32 size)
+void initScreen(
+	void *host_addr,
+	u32 size,
+	u32 requested_width,
+	u32 requested_height)
 {
     u32 zs_depth = 4;
     u32 color_depth = 4;
 
 	rsxInit(&context,DEFUALT_CB_SIZE,size,host_addr);
 
-	initVideoConfiguration();
+	initVideoConfiguration(requested_width, requested_height);
 
 	waitFinish();
 
