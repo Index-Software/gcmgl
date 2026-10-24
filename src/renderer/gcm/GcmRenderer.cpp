@@ -332,8 +332,13 @@ void CGcmRenderer::EndFrame()
 	{
 		CGcmPostProcessingRenderer::End(m_PostProcessState);
 	}
-	
+
 	flip();
+}
+
+uint32 CGcmRenderer::GetMaxFrameLatency() const
+{
+	return 1;
 }
 
 void CGcmRenderer::Clear(
@@ -914,7 +919,14 @@ BufferHandle CGcmRenderer::CreateVertexBuffer(
 		uint32(size),
 		rsxAllocation
 	};
-	m_BufferResources.Insert(hBuffer, bufferResource);
+	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
+	{
+		Error("[GCMRenderer] Buffer resource map is full\n");
+
+		m_StaticHeap.Free(rsxAllocation);
+
+		return 0;
+	}
 
 	return hBuffer;
 }
@@ -949,7 +961,14 @@ BufferHandle CGcmRenderer::CreateIndexBuffer(
 		uint32(size),
 		rsxAllocation
 	};
-	m_BufferResources.Insert(hBuffer, bufferResource);
+	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
+	{
+		Error("[GCMRenderer] Buffer resource map is full\n");
+
+		m_StaticHeap.Free(rsxAllocation);
+
+		return 0;
+	}
 
 	return hBuffer;
 }
@@ -973,7 +992,14 @@ BufferHandle CGcmRenderer::CreateConstantBuffer(
 		uint32(size),
 		rsxAllocation
 	};
-	m_BufferResources.Insert(hBuffer, bufferResource);
+	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
+	{
+		Error("[GCMRenderer] Buffer resource map is full\n");
+
+		m_StaticHeap.Free(rsxAllocation);
+
+		return 0;
+	}
 
 	return hBuffer;
 }

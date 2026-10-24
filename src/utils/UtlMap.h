@@ -108,8 +108,16 @@ public:
 			return m_pElements[index].m_Value;
 		}
 
-		AssertMsg(m_Count < MAX_ELEMENTS, "CUtlMap: Exceeded maximum capacity");
-		
+		if (UNLIKELY(m_Count >= MAX_ELEMENTS))
+		{
+			Error(
+				"CUtlMap: Exceeded maximum capacity (%d)\n",
+				MAX_ELEMENTS);
+
+			static V s_Dummy;
+			return s_Dummy;
+		}
+
 		int32 insertPos = FindInsertionPos(key);
 		
 		// Shift elements forward

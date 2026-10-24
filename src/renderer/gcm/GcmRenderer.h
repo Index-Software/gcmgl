@@ -36,6 +36,7 @@ public:
 	virtual void SetEnvironment() GCMGL_OVERRIDE;
 	virtual void BeginFrame() GCMGL_OVERRIDE;
 	virtual void EndFrame() GCMGL_OVERRIDE;
+	virtual uint32 GetMaxFrameLatency() const GCMGL_OVERRIDE;
 
 	// Clear
 	virtual void Clear(
@@ -216,7 +217,7 @@ protected:
 	StagingBuffer_t m_InstanceBuffers[s_MaxInstanceStagingBuffers];
 	StagingBuffer_t m_StagingVertexBuffer[2];
 	StagingBuffer_t m_StagingIndexBuffer[2];
-	CUtlMap<BufferHandle, BufferResource_t> m_BufferResources;
+	CUtlMap<BufferHandle, BufferResource_t, 1024> m_BufferResources;
 
 	static const uint32 s_StaticHeapSize = 96 * 1024 * 1024;
 	static const uint32 s_DynamicHeapSize = 16 * 1024 * 1024;

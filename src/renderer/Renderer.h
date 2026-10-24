@@ -36,6 +36,7 @@ struct RendererDesc_t
 	uint32 m_Height;
 	bool m_IsFullscreen;
 	bool m_IsVSync;
+	uint32 m_MaxFrameLatency;
 };
 
 enum ClearFlags_t
@@ -530,6 +531,7 @@ public:
 	virtual void SetEnvironment() = 0;
 	virtual void BeginFrame() = 0;
 	virtual void EndFrame() = 0;
+	virtual uint32 GetMaxFrameLatency() const = 0;
 
 	virtual void Clear(
 		uint32 clearFlags,

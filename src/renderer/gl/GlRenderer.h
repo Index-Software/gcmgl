@@ -28,6 +28,7 @@ public:
 	virtual void SetEnvironment() GCMGL_OVERRIDE;
 	virtual void BeginFrame() GCMGL_OVERRIDE;
 	virtual void EndFrame() GCMGL_OVERRIDE;
+	virtual uint32 GetMaxFrameLatency() const GCMGL_OVERRIDE;
 
 	// Clear
 	virtual void Clear(
@@ -212,7 +213,7 @@ protected:
 	uint32 m_InstanceVertexBuffers[s_MaxInstanceStagingBuffers];
 	StagingBuffer_t m_StagingVertexBuffer[2];
 	StagingBuffer_t m_StagingIndexBuffer[2];
-	CUtlMap<BufferHandle, BufferResource_t> m_BufferResources;
+	CUtlMap<BufferHandle, BufferResource_t, 1024> m_BufferResources;
 	int32 m_StagingIndex;
 private:
 	struct TextureResource_t
@@ -251,6 +252,8 @@ private:
 	CUtlMap<TextureHandle, TextureResource_t> m_TextureResources;
 	CUtlMap<RenderTargetHandle, RenderTargetResource_t> m_RenderTargetResources;
 	GLFWwindow* m_pWindow;
+	bool m_IsVSync;
+	uint32 m_MaxFrameLatency;
 	int32 m_InstanceBufferIndex;
 };
 
