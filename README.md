@@ -30,10 +30,26 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 ### Handles
 - `BufferHandle`
 - `ShaderProgramHandle`
+- `MaterialHandle`
 - `TextureHandle`
 - `SamplerHandle`
 - `RenderTargetHandle`
 - `UniformBlockLayoutHandle`
+
+### CColor
+- `static const CColor Black`
+- `static const CColor White`
+- `static const CColor Red`
+- `static const CColor Green`
+- `static const CColor Blue`
+- `static uint32 PackColor(const CColor& color)`
+- `static uint32 PackRGBA(const CColor& color)`
+- `static uint32 PackARGB(const CColor& color)`
+- `static uint32 PackABGR(const CColor& color)`
+- `float32 m_R`
+- `float32 m_G`
+- `float32 m_B`
+- `float32 m_A`
 
 ### RendererDesc_t
 - `void* m_pWindow`
@@ -41,6 +57,7 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `uint32 m_Height`
 - `bool m_IsFullscreen`
 - `bool m_IsVSync`
+- `uint32 m_MaxFrameLatency`
 
 ### ClearFlags_t
 - `ClearNone`
@@ -173,6 +190,8 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 
 ### UniformBlockLayout_t
 - `CUtlVector<CFixedString> m_UniformNames`
+- `CUtlVector<uint32> m_UniformOffsets`
+- `CUtlVector<uint32> m_UniformSizes`
 - `uint32 m_Binding`
 - `uint32 m_Size`
 
@@ -189,11 +208,11 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 
 ### CBatch
 - `CUtlVector<BatchChunk_t> m_BatchChunks`
-- `const CVector3* m_pCameraPos`
 - `void Add(const CVector3& position, const CQuaternion& rotation = CQuaternion(), const CVector3& scale = CVector3(1.0f, 1.0f, 1.0f))`
 - `void Build(float32 chunkSize = 500.0f)`
 - `void Clear()`
 - `uint32 GetCount() const`
+- `const CVector3* m_pCameraPos`
 
 ### Plane_t
 - `CVector3 m_Normal`
@@ -210,12 +229,13 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `void SetEnvironment()`
 - `void BeginFrame()`
 - `void EndFrame()`
+- `uint32 GetMaxFrameLatency() const`
 - `void Clear(uint32 clearFlags, const CColor& color = CColor::Black, float32 depth = 1.0f, uint32 stencil = 0)`
 - `void GetFramebufferSize(uint32& width, uint32& height) const`
 - `float32 GetAspectRatio() const`
 - `void SetFullViewport()`
 - `void SetViewport(const Viewport_t& viewport)`
-- `Viewport_t GetViewport()`
+- `Viewport_t GetViewport() const`
 - `void SetScissor(const Rect_t& rect)`
 - `void SetStencilRef(uint32 stencilRef)`
 - `RenderTargetHandle CreateRenderTarget(uint32 width, uint32 height, TextureFormat_t::Enum colorFormat, TextureFormat_t::Enum depthFormat)`
@@ -248,11 +268,14 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `void SetIndexBuffer(BufferHandle hBuffer, uint64 offset = 0)`
 - `UniformBlockLayoutHandle CreateUniformBlockLayout(const UniformBlockLayout_t& layout)`
 - `UniformBlockLayoutHandle GetOrCreateUniformBlockLayout(ShaderProgramHandle hProgram, const UniformBlockLayout_t& layout)`
+- `void DestroyUniformBlockLayout(UniformBlockLayoutHandle hLayout)`
 - `void SetConstantBuffer(BufferHandle hBuffer, UniformBlockLayoutHandle hLayout, uint32 slot, ShaderStage_t stage)`
 - `int32 GetUniformBlockBinding(ShaderProgramHandle hProgram, const char* pBlockName)`
 - `void SetBlendState(const BlendState_t& state)`
 - `void SetDepthStencilState(const DepthStencilState_t& state)`
 - `void SetCullMode(CullMode_t::Enum mode)`
+- `void ApplyVertexConstants(ShaderProgramHandle hProgram)`
+- `void ApplyFragmentConstants(ShaderProgramHandle hProgram)`
 - `void ExtractFrustumPlanes(const CMatrix4& mvp, Plane_t* pPlanes)`
 - `bool TestAABBFrustum(const CVector3& center, const CVector3& extent, const Plane_t* pPlanes)`
 - `void Draw(uint32 vertexCount, uint32 startVertex = 0, const CMatrix4* pViewProjection = GCMGL_NULL, const CVector3* pAABBCenter = GCMGL_NULL, const CVector3* pAABBExtent = GCMGL_NULL)`
@@ -265,8 +288,25 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `void FlushPipelineState()`
 
 ### CRenderer
+- `BufferHandle CreateStagingBuffer(uint64 size)`
+- `ShaderProgramHandle GetOrCreateShaderProgram(const CFixedString& shaderName)`
+- `void ClearShaderCache()`
 - `float32 GetAspectRatio() const`
+- `void SetShaderProgram(ShaderProgramHandle hProgram)`
+- `void SetVertexBuffer(BufferHandle hBuffer, uint32 slot = 0, uint32 vertexStride = 0, uint32 offset = 0, const CVertexLayout* pLayout = GCMGL_NULL)`
+- `void SetIndexBuffer(BufferHandle hBuffer, uint64 offset = 0)`
+- `UniformBlockLayoutHandle CreateUniformBlockLayout(const UniformBlockLayout_t& layout)`
+- `UniformBlockLayoutHandle GetOrCreateUniformBlockLayout(ShaderProgramHandle hProgram, const UniformBlockLayout_t& layout)`
+- `void DestroyUniformBlockLayout(UniformBlockLayoutHandle hLayout)`
+- `void SetPipelineState(const PipelineState_t& state)`
+- `void FlushPipelineState()`
+- `void SetBlendState(const BlendState_t& state)`
+- `void SetDepthStencilState(const DepthStencilState_t& state)`
+- `void ExtractFrustumPlanes(const CMatrix4& mvp, Plane_t* pPlanes)`
+- `bool TestAABBFrustum(const CVector3& center, const CVector3& extent, const Plane_t* pPlanes)`
 - `FrustumVisibility_t::Enum GetAABBFrustumVisibility(const CVector3& center, const CVector3& extent, const Plane_t* pPlanes)`
+- `void BindVertexAttributes(const CVertexLayout* pLayout, uint32 vertexStride, uint32 offset)`
+- `void FlushProgramState()`
 
 ## Build
 
