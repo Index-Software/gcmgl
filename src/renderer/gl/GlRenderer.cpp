@@ -20,10 +20,14 @@
 #include <simde/x86/sse.h>
 #endif
 
+static const uint32 s_DefaultMaxFrameLatency = 2;
+
 CGlRenderer::CGlRenderer() :
 	m_StagingIndex(0),
-	m_InstanceBufferIndex(0),
-	m_pWindow(GCMGL_NULL)
+	m_pWindow(GCMGL_NULL),
+	m_IsVSync(false),
+	m_MaxFrameLatency(s_DefaultMaxFrameLatency),
+	m_InstanceBufferIndex(0)
 {
 	for (int32 i = 0; i < s_MaxInstanceStagingBuffers; i++)
 	{
@@ -39,6 +43,15 @@ CGlRenderer::~CGlRenderer()
 
 bool CGlRenderer::Init(const RendererDesc_t& rendererDesc)
 {
+	m_IsVSync = rendererDesc.m_IsVSync;
+	m_MaxFrameLatency = rendererDesc.m_MaxFrameLatency
+		? rendererDesc.m_MaxFrameLatency
+		: s_DefaultMaxFrameLatency;
+	if (m_MaxFrameLatency < 1)
+	{
+		m_MaxFrameLatency = 1;
+	}
+
 	if (rendererDesc.m_pWindow != GCMGL_NULL)
 	{
 		m_pWindow = reinterpret_cast<GLFWwindow*>(rendererDesc.m_pWindow);
@@ -246,6 +259,11 @@ void CGlRenderer::EndFrame()
 	{
 		glfwSwapBuffers(reinterpret_cast<GLFWwindow*>(m_pWindow));
 	}
+}
+
+uint32 CGlRenderer::GetMaxFrameLatency() const
+{
+	return m_MaxFrameLatency;
 }
 
 void CGlRenderer::Clear(
@@ -670,7 +688,15 @@ BufferHandle CGlRenderer::CreateVertexBuffer(
 		true,
 		false
 	};
-	m_BufferResources.Insert(hBuffer, bufferResource);
+	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
+	{
+		Error("[GLRenderer] Buffer resource map is full\n");
+
+		glDeleteBuffers(1, &id);
+		CUtlMemory::AlignedFree(pPtr);
+
+		return 0;
+	}
 
 	return hBuffer;
 }
@@ -716,7 +742,15 @@ BufferHandle CGlRenderer::CreateIndexBuffer(
 		true,
 		false
 	};
-	m_BufferResources.Insert(hBuffer, bufferResource);
+	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
+	{
+		Error("[GLRenderer] Buffer resource map is full\n");
+
+		glDeleteBuffers(1, &id);
+		CUtlMemory::AlignedFree(pPtr);
+
+		return 0;
+	}
 
 	return hBuffer;
 }
@@ -751,7 +785,15 @@ BufferHandle CGlRenderer::CreateConstantBuffer(uint64 size, BufferUsage_t::Enum 
 		false,
 		false
 	};
-	m_BufferResources.Insert(hBuffer, bufferResource);
+	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
+	{
+		Error("[GLRenderer] Buffer resource map is full\n");
+
+		glDeleteBuffers(1, &id);
+		CUtlMemory::Free(pPtr);
+
+		return 0;
+	}
 
 	return hBuffer;
 }
