@@ -224,7 +224,7 @@ int32 RunTexturedExample(
 		pTextureData = reinterpret_cast<uint32*>(pRawImageData); // RGBA
 		finalWidth = texWidth;
 		finalHeight = texHeight;
-		Msg("[Textured] Loaded texture: %dx%d\n", texWidth, texHeight);
+		Msg("Loaded texture: %dx%d\n", texWidth, texHeight);
 	}
 	else
 	{

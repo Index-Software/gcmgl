@@ -15,12 +15,12 @@
 
 #ifdef GCMGL_DIAGNOSTICS
 #include "utils/DiagnosticsReporter.h"
-#endif
+#endif // GCMGL_DIAGNOSTICS
 
 #ifdef PLATFORM_PS3
 #include "rsxutil/rsxutil.h"
 #include "renderer/gcm/GcmRenderer.h"
-#endif
+#endif // PLATFORM_PS3
 
 #ifdef EXAMPLE_TRIANGLE
 #include "examples/example_triangle/Triangle.h"
@@ -38,7 +38,7 @@
 #include "examples/example_batch/Batch.h"
 #elif defined(EXAMPLE_BATCH_INSTANCED)
 #include "examples/example_batchInstanced/BatchInstanced.h"
-#endif
+#endif // EXAMPLE_TRIANGLE
 
 int main(int argc, char* argv[])
 {
@@ -47,7 +47,8 @@ int main(int argc, char* argv[])
 	WindowConfig_t windowConfig;
 	windowConfig.m_Width = 1280;
 	windowConfig.m_Height = 720;
-	windowConfig.m_AspectRatio = float32(windowConfig.m_Width) / float32(windowConfig.m_Height);
+	windowConfig.m_AspectRatio =
+		float32(windowConfig.m_Width) / float32(windowConfig.m_Height);
 	windowConfig.m_Title = "gcmgl";
 
 	CWindowManager windowManager;
@@ -57,7 +58,7 @@ int main(int argc, char* argv[])
 	if (!windowManager.Start(WindowBackendGlfw, windowConfig))
 #endif // !PLATFORM_PS3
 	{
-		Error("[Game] Failed to start window manager\n");
+		Error("[Main] Failed to start window manager\n");
 
 		return 1;
 	}
@@ -67,7 +68,7 @@ int main(int argc, char* argv[])
 	IRenderer* pRenderer = CreateRenderer();
 	if (!pRenderer)
 	{
-		Error("[Game] Failed to create renderer\n");
+		Error("[Main] Failed to create renderer\n");
 
 		return 1;
 	}
@@ -81,7 +82,7 @@ int main(int argc, char* argv[])
 	};
 	if (!pRenderer->Init(rendererDesc))
 	{
-		Error("[Game] Failed to initialize renderer\n");
+		Error("[Main] Failed to initialize renderer\n");
 
 		return 1;
 	}
@@ -98,7 +99,7 @@ int main(int argc, char* argv[])
 	CDiagnosticsReporter::Init();
 #endif // GCMGL_DIAGNOSTICS
 
-#if defined(EXAMPLE_TRIANGLE)
+#ifdef EXAMPLE_TRIANGLE
 	result = RunTriangleExample(
 		windowManager,
 		pRenderer,
@@ -146,7 +147,7 @@ int main(int argc, char* argv[])
 		pRenderer,
 		pWindow,
 		windowConfig);
-#endif
+#endif // EXAMPLE_TRIANGLE
 
 	pRenderer->Shutdown();
 	DestroyRenderer(pRenderer);

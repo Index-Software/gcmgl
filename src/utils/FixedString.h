@@ -56,7 +56,7 @@ public:
 		return CFixedString(m_String + std::string(pStr ? pStr : ""));
 	}
 
-	static const size_t npos = (size_t)-1;
+	static const size_t npos = static_cast<size_t>(-1);
 
 	size_t find(const char* pStr, size_t pos = 0) const
 	{

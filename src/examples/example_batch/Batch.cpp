@@ -239,7 +239,9 @@ int32 RunBatchExample(
 			0.0f);
 		float32 time = float32(CTime::GetTime() - startTime);
 
-		for (int32 chunkIndex = 0; chunkIndex < batch.m_BatchChunks.Count(); chunkIndex++)
+		for (int32 chunkIndex = 0;
+			chunkIndex < batch.m_BatchChunks.Count();
+			chunkIndex++)
 		{
 			BatchChunk_t& batchChunk = batch.m_BatchChunks[chunkIndex];
 

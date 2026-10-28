@@ -89,6 +89,15 @@ int32 RunLitExample(
 	uint32* pSphereIndices = static_cast<uint32*>(
 		CUtlMemory::Alloc(uint64(indexCount) * sizeof(uint32)));
 
+	if (!pSphereVertices || !pSphereIndices)
+	{
+		CUtlMemory::Free(pSphereVertices);
+		CUtlMemory::Free(pSphereIndices);
+		Error("[Lit] Failed to allocate sphere geometry\n");
+
+		return 1;
+	}
+
 	int32 vertexPos = 0;
 
 	for (int32 ring = 0; ring <= rings; ring++)

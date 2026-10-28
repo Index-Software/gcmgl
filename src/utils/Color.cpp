@@ -33,7 +33,8 @@ uint32 CColor::PackRGBA(const CColor& color)
 	uint8 b8 = uint8(color.m_B * 255.0f);
 	uint8 a8 = uint8(color.m_A * 255.0f);
 	
-	return (uint32(r8) << 24) | (uint32(g8) << 16) | (uint32(b8) << 8) | uint32(a8);
+	return (uint32(r8) << 24) | (uint32(g8) << 16) |
+		(uint32(b8) << 8) | uint32(a8);
 }
 
 uint32 CColor::PackARGB(const CColor& color)
@@ -43,7 +44,8 @@ uint32 CColor::PackARGB(const CColor& color)
 	uint8 b8 = uint8(color.m_B * 255.0f);
 	uint8 a8 = uint8(color.m_A * 255.0f);
 
-	return (uint32(a8) << 24) | (uint32(r8) << 16) | (uint32(g8) << 8) | uint32(b8);
+	return (uint32(a8) << 24) | (uint32(r8) << 16) |
+		(uint32(g8) << 8) | uint32(b8);
 }
 
 uint32 CColor::PackABGR(const CColor& color)
@@ -53,5 +55,6 @@ uint32 CColor::PackABGR(const CColor& color)
 	uint8 b8 = uint8(color.m_B * 255.0f);
 	uint8 a8 = uint8(color.m_A * 255.0f);
 
-	return (uint32(a8) << 24) | (uint32(b8) << 16) | (uint32(g8) << 8) | uint32(r8);
+	return (uint32(a8) << 24) | (uint32(b8) << 16) |
+		(uint32(g8) << 8) | uint32(r8);
 }

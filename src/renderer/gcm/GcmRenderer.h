@@ -297,8 +297,10 @@ private:
 		bool m_IsFragmentDirty;
 	};
 
-	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, UniformShadow_t> > m_ProgramUniformShadows;
-	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, BoundUniform_t> > m_ProgramUniformBuffers;
+	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, UniformShadow_t> >
+		m_ProgramUniformShadows;
+	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, BoundUniform_t> >
+		m_ProgramUniformBuffers;
 	CUtlMap<TextureHandle, TextureResource_t> m_TextureResources;
 	CUtlMap<RenderTargetHandle, RenderTargetResource_t> m_RenderTargetResources;
 

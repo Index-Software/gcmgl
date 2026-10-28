@@ -18,9 +18,33 @@
 
 #ifdef SIMD_ENABLED
 #include <simde/x86/sse.h>
-#endif
+#endif // SIMD_ENABLED
 
 static const uint32 s_DefaultMaxFrameLatency = 2;
+
+static uint32 CompileShaderFromSource(
+	GLenum shaderType,
+	const CFixedString& source)
+{
+	const char* pShaderSource = source.AsCharPtr();
+	GLuint hShader = glCreateShader(shaderType);
+	glShaderSource(hShader, 1, &pShaderSource, GCMGL_NULL);
+	glCompileShader(hShader);
+
+	GLint compileStatus;
+	glGetShaderiv(hShader, GL_COMPILE_STATUS, &compileStatus);
+	if (!compileStatus)
+	{
+		char buf[1024];
+		glGetShaderInfoLog(hShader, sizeof(buf), GCMGL_NULL, buf);
+		Error("[CGlRenderer] Failed to compile shader: %s\n", buf);
+		glDeleteShader(hShader);
+
+		return 0;
+	}
+
+	return hShader;
+}
 
 CGlRenderer::CGlRenderer() :
 	m_StagingIndex(0),
@@ -52,6 +76,9 @@ bool CGlRenderer::Init(const RendererDesc_t& rendererDesc)
 		m_MaxFrameLatency = 1;
 	}
 
+	// Preallocate the DrawIndexedInstanced transpose scratch (no per-frame heap)
+	m_InstanceScratch.SetCount(s_MaxIndexedInstancesPerDraw * 16);
+
 	if (rendererDesc.m_pWindow != GCMGL_NULL)
 	{
 		m_pWindow = reinterpret_cast<GLFWwindow*>(rendererDesc.m_pWindow);
@@ -59,7 +86,7 @@ bool CGlRenderer::Init(const RendererDesc_t& rendererDesc)
 
 	if (!gladLoadGL(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress)))
 	{
-		Error("[GLRenderer] Failed to initialize GLAD\n");
+		Error("[CGlRenderer] Failed to initialize GLAD\n");
 
 		return false;
 	}
@@ -67,7 +94,7 @@ bool CGlRenderer::Init(const RendererDesc_t& rendererDesc)
 	GLenum err = glGetError();
 	if (err != GL_NO_ERROR)
 	{
-		Warning("[GLRenderer] OpenGL error during initialisation: %d\n", err);
+		Warning("[CGlRenderer] OpenGL error during initialisation: %d\n", err);
 
 		return false;
 	}
@@ -158,7 +185,9 @@ void CGlRenderer::Shutdown()
 		}
 	}
 
-	for (int32 i = m_TextureResources.FirstInorder(); m_TextureResources.IsValidIndex(i); i = m_TextureResources.NextInorder(i))
+	for (int32 i = m_TextureResources.FirstInorder();
+		m_TextureResources.IsValidIndex(i);
+		i = m_TextureResources.NextInorder(i))
 	{
 		TextureResource_t& textureResource = m_TextureResources.Element(i);
 		if (textureResource.m_hId)
@@ -169,7 +198,9 @@ void CGlRenderer::Shutdown()
 	}
 	m_TextureResources.RemoveAll();
 
-	for (int32 i = m_ProgramResources.FirstInorder(); m_ProgramResources.IsValidIndex(i); i = m_ProgramResources.NextInorder(i))
+	for (int32 i = m_ProgramResources.FirstInorder();
+		m_ProgramResources.IsValidIndex(i);
+		i = m_ProgramResources.NextInorder(i))
 	{
 		ProgramResource_t& programResource = m_ProgramResources.Element(i);
 		if (programResource.m_hId)
@@ -179,16 +210,21 @@ void CGlRenderer::Shutdown()
 	}
 	m_ProgramResources.RemoveAll();
 
-	for (int32 i = m_RenderTargetResources.FirstInorder(); m_RenderTargetResources.IsValidIndex(i); i = m_RenderTargetResources.NextInorder(i))
+	for (int32 i = m_RenderTargetResources.FirstInorder();
+		m_RenderTargetResources.IsValidIndex(i);
+		i = m_RenderTargetResources.NextInorder(i))
 	{
-		const RenderTargetResource_t& renderTargetResource = m_RenderTargetResources.Element(i);
+		const RenderTargetResource_t& renderTargetResource =
+			m_RenderTargetResources.Element(i);
 		glDeleteFramebuffers(1, &renderTargetResource.m_hFramebuffer);
 	}
 	m_RenderTargetResources.RemoveAll();
 
 	m_ProgramUniformBuffers.RemoveAll();
 
-	for (int32 i = m_BufferResources.FirstInorder(); m_BufferResources.IsValidIndex(i); i = m_BufferResources.NextInorder(i))
+	for (int32 i = m_BufferResources.FirstInorder();
+		m_BufferResources.IsValidIndex(i);
+		i = m_BufferResources.NextInorder(i))
 	{
 		BufferResource_t& bufferResource = m_BufferResources.Element(i);
 
@@ -232,7 +268,7 @@ void CGlRenderer::SetEnvironment()
 {
 #ifndef GL_TEXTURE_CUBE_MAP_SEAMLESS
 #define GL_TEXTURE_CUBE_MAP_SEAMLESS 0x884F
-#endif
+#endif // !GL_TEXTURE_CUBE_MAP_SEAMLESS
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_SCISSOR_TEST);
 
@@ -296,7 +332,9 @@ void CGlRenderer::Clear(
 
 	if (clearFlags & ClearDepth)
 	{
-		glDepthMask(m_PipelineState.m_DepthStencilState.m_IsDepthWrite ? GL_TRUE : GL_FALSE);
+		glDepthMask(m_PipelineState.m_DepthStencilState.m_IsDepthWrite
+			? GL_TRUE
+			: GL_FALSE);
 	}
 }
 
@@ -424,7 +462,7 @@ RenderTargetHandle CGlRenderer::CreateRenderTarget(
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
 		Warning(
-			"[GLRenderer] Invalid framebuffer complete status: 0x%x\n",
+			"[CGlRenderer] Invalid framebuffer complete status: 0x%x\n",
 			status);
 	}
 
@@ -505,7 +543,7 @@ RenderTargetHandle CGlRenderer::CreateRenderTargetCube(
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 	{
 		Warning(
-			"[GLRenderer] Invalid framebuffer complete status: 0x%x\n",
+			"[CGlRenderer] Invalid framebuffer complete status: 0x%x\n",
 			status);
 	}
 
@@ -529,8 +567,8 @@ void CGlRenderer::DestroyRenderTarget(RenderTargetHandle hRenderTarget)
 	const int32 index = m_RenderTargetResources.Find(hRenderTarget);
 	if (index != m_RenderTargetResources.InvalidIndex())
 	{
-		const RenderTargetResource_t& renderTargetResource = m_RenderTargetResources.Element(
-			index);
+		const RenderTargetResource_t& renderTargetResource =
+			m_RenderTargetResources.Element(index);
 		glDeleteFramebuffers(1, &renderTargetResource.m_hFramebuffer);
 		if (renderTargetResource.m_hColorTexture != 0)
 		{
@@ -566,8 +604,8 @@ void CGlRenderer::SetRenderTarget(
 	const int32 index = m_RenderTargetResources.Find(hRenderTarget);
 	if (index != m_RenderTargetResources.InvalidIndex())
 	{
-		const RenderTargetResource_t& renderTargetResource = m_RenderTargetResources.Element(
-			index);
+		const RenderTargetResource_t& renderTargetResource =
+			m_RenderTargetResources.Element(index);
 		glBindFramebuffer(GL_FRAMEBUFFER, renderTargetResource.m_hFramebuffer);
 		
 		if (renderTargetResource.m_IsCubemap)
@@ -656,7 +694,7 @@ BufferHandle CGlRenderer::CreateVertexBuffer(
 	void* pPtr = CUtlMemory::AlignedAlloc(size, 16);
 	if (!pPtr)
 	{
-		Error("[GLRenderer] Failed to allocate vertex buffer memory\n");
+		Error("[CGlRenderer] Failed to allocate vertex buffer memory\n");
 
 		return 0;
 	}
@@ -690,7 +728,7 @@ BufferHandle CGlRenderer::CreateVertexBuffer(
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
-		Error("[GLRenderer] Buffer resource map is full\n");
+		Error("[CGlRenderer] Buffer resource map is full\n");
 
 		glDeleteBuffers(1, &id);
 		CUtlMemory::AlignedFree(pPtr);
@@ -710,7 +748,7 @@ BufferHandle CGlRenderer::CreateIndexBuffer(
 	void* pPtr = CUtlMemory::AlignedAlloc(size, 16);
 	if (!pPtr)
 	{
-		Error("[GLRenderer] Failed to allocate index buffer memory\n");
+		Error("[CGlRenderer] Failed to allocate index buffer memory\n");
 
 		return 0;
 	}
@@ -744,7 +782,7 @@ BufferHandle CGlRenderer::CreateIndexBuffer(
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
-		Error("[GLRenderer] Buffer resource map is full\n");
+		Error("[CGlRenderer] Buffer resource map is full\n");
 
 		glDeleteBuffers(1, &id);
 		CUtlMemory::AlignedFree(pPtr);
@@ -755,12 +793,14 @@ BufferHandle CGlRenderer::CreateIndexBuffer(
 	return hBuffer;
 }
 
-BufferHandle CGlRenderer::CreateConstantBuffer(uint64 size, BufferUsage_t::Enum usage)
+BufferHandle CGlRenderer::CreateConstantBuffer(
+	uint64 size,
+	BufferUsage_t::Enum usage)
 {
 	void* pPtr = CUtlMemory::Alloc(size);
 	if (!pPtr)
 	{
-		Error("[GLRenderer] Failed to allocate constant buffer memory\n");
+		Error("[CGlRenderer] Failed to allocate constant buffer memory\n");
 
 		return 0;
 	}
@@ -787,7 +827,7 @@ BufferHandle CGlRenderer::CreateConstantBuffer(uint64 size, BufferUsage_t::Enum 
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
-		Error("[GLRenderer] Buffer resource map is full\n");
+		Error("[CGlRenderer] Buffer resource map is full\n");
 
 		glDeleteBuffers(1, &id);
 		CUtlMemory::Free(pPtr);
@@ -807,7 +847,7 @@ void CGlRenderer::UpdateBuffer(
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGlRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return;
 	}
@@ -836,7 +876,7 @@ void CGlRenderer::DestroyBuffer(BufferHandle hBuffer)
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGlRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return;
 	}
@@ -867,7 +907,7 @@ void* CGlRenderer::MapBuffer(BufferHandle hBuffer)
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGlRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return GCMGL_NULL;
 	}
@@ -880,7 +920,7 @@ void CGlRenderer::UnmapBuffer(BufferHandle hBuffer)
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGlRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return;
 	}
@@ -897,52 +937,30 @@ void CGlRenderer::UnmapBuffer(BufferHandle hBuffer)
 	}
 }
 
-static uint32 CompileShaderFromSource(
-	GLenum shaderType,
-	const CFixedString& source)
-{
-	const char* pShaderSource = source.AsCharPtr();
-	GLuint hShader = glCreateShader(shaderType);
-	glShaderSource(hShader, 1, &pShaderSource, GCMGL_NULL);
-	glCompileShader(hShader);
-
-	GLint compileStatus;
-	glGetShaderiv(hShader, GL_COMPILE_STATUS, &compileStatus);
-	if (!compileStatus)
-	{
-		char buf[1024];
-		glGetShaderInfoLog(hShader, sizeof(buf), GCMGL_NULL, buf);
-		Error("[GLRenderer] Failed to compile shader: %s\n", buf);
-		glDeleteShader(hShader);
-
-		return 0;
-	}
-
-	return hShader;
-}
-
 ShaderProgramHandle CGlRenderer::CreateShaderProgram(
 	const CFixedString& shaderName)
 {
-	CFixedString vertexProgramPath = CFixedString("shaders/glsl/") + shaderName + CFixedString(".vert");
+	CFixedString vertexProgramPath =
+		CFixedString("shaders/glsl/") + shaderName + CFixedString(".vert");
 	CFixedString vertexProgramSource = CUtils::ReadFile(
 		vertexProgramPath.AsCharPtr());
 	if (vertexProgramSource.IsEmpty())
 	{
 		Error(
-			"[GLRenderer] Failed to read vertex shader source: %s\n",
+			"[CGlRenderer] Failed to read vertex shader source: %s\n",
 			vertexProgramPath.AsCharPtr());
 
 		return 0;
 	}
 
-	CFixedString fragmentProgramPath = CFixedString("shaders/glsl/") + shaderName + CFixedString(".frag");
+	CFixedString fragmentProgramPath =
+		CFixedString("shaders/glsl/") + shaderName + CFixedString(".frag");
 	CFixedString fragmentProgramSource = CUtils::ReadFile(
 		fragmentProgramPath.AsCharPtr());
 	if (fragmentProgramSource.IsEmpty())
 	{
 		Error(
-			"[GLRenderer] Failed to read fragment shader source: %s\n",
+			"[CGlRenderer] Failed to read fragment shader source: %s\n",
 			fragmentProgramPath.AsCharPtr());
 
 		return 0;
@@ -977,7 +995,7 @@ ShaderProgramHandle CGlRenderer::CreateShaderProgram(
 	{
 		char buf[1024];
 		glGetProgramInfoLog(glProgram, sizeof(buf), GCMGL_NULL, buf);
-		Error("[GLRenderer] Failed to link shader program: %s\n", buf);
+		Error("[CGlRenderer] Failed to link shader program: %s\n", buf);
 		glDeleteProgram(glProgram);
 		glDeleteShader(vertexShader);
 		glDeleteShader(fragmentShader);
@@ -1014,7 +1032,7 @@ ShaderProgramHandle CGlRenderer::CreateShaderProgram(
 			blockName);
 		programResource.m_UniformBindingMap.Insert(
 			CFixedString(blockName),
-			(int32)binding);
+			static_cast<int32>(binding));
 
 		GLint numUniformsInBlock = 0;
 		glGetActiveUniformBlockiv(
@@ -1038,7 +1056,7 @@ ShaderProgramHandle CGlRenderer::CreateShaderProgram(
 			GLenum type;
 			glGetActiveUniform(
 				glProgram,
-				(GLuint)uniformIndices[j],
+				static_cast<GLuint>(uniformIndices[j]),
 				sizeof(name),
 				GCMGL_NULL,
 				&size,
@@ -1050,7 +1068,7 @@ ShaderProgramHandle CGlRenderer::CreateShaderProgram(
 
 			programResource.m_UniformBindingMap.Insert(
 				CFixedString(pBaseName),
-				(int32)binding);
+				static_cast<int32>(binding));
 
 			// Slang _0 suffix
 			size_t len = strlen(pBaseName);
@@ -1059,7 +1077,7 @@ ShaderProgramHandle CGlRenderer::CreateShaderProgram(
 				pBaseName[len - 2] = '\0';
 				programResource.m_UniformBindingMap.Insert(
 					CFixedString(pBaseName),
-					(int32)binding);
+					static_cast<int32>(binding));
 			}
 		}
 	}
@@ -1074,7 +1092,7 @@ void CGlRenderer::DestroyShaderProgram(ShaderProgramHandle hProgram)
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGlRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1298,7 +1316,7 @@ void CGlRenderer::SetTexture(
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid texture handle: %d\n", hTexture);
+		Warning("[CGlRenderer] Invalid texture handle: %d\n", hTexture);
 
 		return;
 	}
@@ -1308,7 +1326,9 @@ void CGlRenderer::SetTexture(
 
 	glActiveTexture(GL_TEXTURE0 + slot);
 
-	uint32 target = textureResource.m_Target ? textureResource.m_Target : GL_TEXTURE_2D;
+	uint32 target = textureResource.m_Target
+		? textureResource.m_Target
+		: GL_TEXTURE_2D;
 	glBindTexture(target, textureResource.m_hId);
 
 	GLint glWrapMode = GL_REPEAT;
@@ -1336,7 +1356,7 @@ void CGlRenderer::SetTextureCompareMode(
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid texture handle: %d\n", hTexture);
+		Warning("[CGlRenderer] Invalid texture handle: %d\n", hTexture);
 
 		return;
 	}
@@ -1344,7 +1364,9 @@ void CGlRenderer::SetTextureCompareMode(
 	const TextureResource_t& textureResource = m_TextureResources.Element(
 		textureIndex);
 
-	uint32 target = textureResource.m_Target ? textureResource.m_Target : GL_TEXTURE_2D;
+	uint32 target = textureResource.m_Target
+		? textureResource.m_Target
+		: GL_TEXTURE_2D;
 	glBindTexture(target, textureResource.m_hId);
 
 	if (compareMode == TextureCompareMode_t::RefToTexture)
@@ -1367,7 +1389,7 @@ void CGlRenderer::SetSampler(
 	uint32 slot,
 	ShaderStage_t stage)
 {
-	Msg("[GLRenderer] SetSampler not implemented\n");
+	Msg("SetSampler not implemented\n");
 }
 
 void CGlRenderer::UpdateTexture(
@@ -1378,7 +1400,7 @@ void CGlRenderer::UpdateTexture(
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid texture handle: %d\n", hTexture);
+		Warning("[CGlRenderer] Invalid texture handle: %d\n", hTexture);
 
 		return;
 	}
@@ -1393,7 +1415,7 @@ void CGlRenderer::DestroyTexture(TextureHandle hTexture)
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid texture handle: %d\n", hTexture);
+		Warning("[CGlRenderer] Invalid texture handle: %d\n", hTexture);
 
 		return;
 	}
@@ -1418,7 +1440,7 @@ void CGlRenderer::SetConstantBuffer(
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGlRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return;
 	}
@@ -1426,19 +1448,20 @@ void CGlRenderer::SetConstantBuffer(
 	int32 layoutIndex = m_UniformBlockLayouts.Find(hLayout);
 	if (layoutIndex == m_UniformBlockLayouts.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid uniform layout handle: %d\n", hLayout);
+		Warning("[CGlRenderer] Invalid uniform layout handle: %d\n", hLayout);
 
 		return;
 	}
 
 	if (m_PipelineState.m_hShaderProgram == 0)
 	{
-		Warning("[GLRenderer] Invalid shader program bound\n");
+		Warning("[CGlRenderer] Invalid shader program bound\n");
 
 		return;
 	}
 
-	BoundUniform_t& boundUniform = m_ProgramUniformBuffers[m_PipelineState.m_hShaderProgram][hLayout];
+	BoundUniform_t& boundUniform =
+		m_ProgramUniformBuffers[m_PipelineState.m_hShaderProgram][hLayout];
 	boundUniform.m_hBuffer = hBuffer;
 	boundUniform.m_Slot = slot;
 	boundUniform.m_Stage = stage;
@@ -1532,7 +1555,7 @@ void CGlRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 {
 	if (hProgram == 0)
 	{
-		Warning("[GLRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGlRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1546,7 +1569,7 @@ void CGlRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGlRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1577,7 +1600,9 @@ void CGlRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 		}
 	}
 
-	for (int32 uniformIndex = uniforms.FirstInorder(); uniforms.IsValidIndex(uniformIndex); uniformIndex = uniforms.NextInorder(uniformIndex))
+	for (int32 uniformIndex = uniforms.FirstInorder();
+		uniforms.IsValidIndex(uniformIndex);
+		uniformIndex = uniforms.NextInorder(uniformIndex))
 	{
 		const BoundUniform_t& boundUniform = uniforms.Element(uniformIndex);
 		if (!(boundUniform.m_Stage & ShaderStageVertex)) continue;
@@ -1616,7 +1641,7 @@ void CGlRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 {
 	if (hProgram == 0)
 	{
-		Warning("[GLRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGlRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1630,7 +1655,7 @@ void CGlRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
-		Warning("[GLRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGlRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1658,7 +1683,9 @@ void CGlRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 		}
 	}
 
-	for (int32 uniformIndex = uniforms.FirstInorder(); uniforms.IsValidIndex(uniformIndex); uniformIndex = uniforms.NextInorder(uniformIndex))
+	for (int32 uniformIndex = uniforms.FirstInorder();
+		uniforms.IsValidIndex(uniformIndex);
+		uniformIndex = uniforms.NextInorder(uniformIndex))
 	{
 		const BoundUniform_t& boundUniform = uniforms.Element(uniformIndex);
 		if (!(boundUniform.m_Stage & ShaderStageFragment)) continue;
@@ -1727,14 +1754,14 @@ void CGlRenderer::DrawIndexed(
 {
 	if (m_PipelineState.m_hIndexBuffer == 0)
 	{
-		Warning("[GLRenderer] Invalid index buffer bound\n");
+		Warning("[CGlRenderer] Invalid index buffer bound\n");
 
 		return;
 	}
 
 	if (m_PipelineState.m_hShaderProgram == 0)
 	{
-		Warning("[GLRenderer] Invalid shader program bound\n");
+		Warning("[CGlRenderer] Invalid shader program bound\n");
 
 		return;
 	}
@@ -1749,13 +1776,14 @@ void CGlRenderer::DrawIndexed(
 		}
 	}
 
-	uint64 indexOffset = m_PipelineState.m_IndexOffset + uint64(startIndex) * sizeof(uint32);
+	uint64 indexOffset =
+		m_PipelineState.m_IndexOffset + uint64(startIndex) * sizeof(uint32);
 	int32 indexBufferIndex = m_BufferResources.Find(
 		m_PipelineState.m_hIndexBuffer);
 	if (indexBufferIndex == m_BufferResources.InvalidIndex())
 	{
 		Warning(
-			"[GLRenderer] Invalid index buffer handle: %d\n",
+			"[CGlRenderer] Invalid index buffer handle: %d\n",
 			m_PipelineState.m_hIndexBuffer);
 
 		return;
@@ -1790,18 +1818,21 @@ void CGlRenderer::DrawInstanced(
 
 	ProgramResource_t& programResource = m_ProgramResources.Element(
 		programIndex);
-	CUtlMap<CFixedString, int32>& attributeMap = programResource.m_AttributeLocations;
+	CUtlMap<CFixedString, int32>& attributeMap =
+		programResource.m_AttributeLocations;
 
 	FlushProgramState();
 
 	ApplyVertexConstants(hProgram);
 	ApplyFragmentConstants(hProgram);
 
-	const CUtlVector<VertexAttribute_t>& attributes = pInstanceLayout->GetAttributes();
+	const CUtlVector<VertexAttribute_t>& attributes =
+		pInstanceLayout->GetAttributes();
 
 	uint64 uploadSize = uint64(instanceCount) * 16 * sizeof(float32);
 	uint32& instanceVertexBuffer = m_InstanceVertexBuffers[m_InstanceBufferIndex];
-	uint64& instanceVertexBufferSize = m_InstanceVertexBufferSizes[m_InstanceBufferIndex];
+	uint64& instanceVertexBufferSize =
+		m_InstanceVertexBufferSizes[m_InstanceBufferIndex];
 
 	if (instanceVertexBuffer == 0)
 	{
@@ -1835,7 +1866,9 @@ void CGlRenderer::DrawInstanced(
 
 		uint32 semanticLoc = GetVertexSemanticAttributeIndex(
 			attribute.m_VertexSemantic);
-		int32 loc = semanticLoc != 0xFFFFFFFFu ? static_cast<int32>(semanticLoc) : static_cast<int32>(attribute.m_Location);
+		int32 loc = semanticLoc != 0xFFFFFFFFu
+			? static_cast<int32>(semanticLoc)
+			: static_cast<int32>(attribute.m_Location);
 		if (loc < 0) continue;
 		glEnableVertexAttribArray(loc);
 		glVertexAttribPointer(
@@ -1853,14 +1886,18 @@ void CGlRenderer::DrawInstanced(
 		int32(vertexCount),
 		int32(instanceCount));
 
-	m_InstanceBufferIndex = (m_InstanceBufferIndex + 1) % s_MaxInstanceStagingBuffers;
+	m_InstanceBufferIndex =
+		(m_InstanceBufferIndex + 1) % s_MaxInstanceStagingBuffers;
 
 	for (int32 i = 0; i < attributes.Count(); i++)
 	{
 		const VertexAttribute_t& attribute = attributes[i];
 		if (attribute.m_Name.IsEmpty()) continue;
-		uint32 semanticLoc = GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
-		int32 loc = semanticLoc != 0xFFFFFFFFu ? static_cast<int32>(semanticLoc) : static_cast<int32>(attribute.m_Location);
+		uint32 semanticLoc =
+			GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
+		int32 loc = semanticLoc != 0xFFFFFFFFu
+			? static_cast<int32>(semanticLoc)
+			: static_cast<int32>(attribute.m_Location);
 		if (loc >= 0)
 		{
 			glVertexAttribDivisor(loc, 0);
@@ -1888,19 +1925,31 @@ void CGlRenderer::DrawIndexedInstanced(
 	ApplyVertexConstants(hProgram);
 	ApplyFragmentConstants(hProgram);
 
-	const CUtlVector<VertexAttribute_t>& attributes = pInstanceLayout->GetAttributes();
+	const CUtlVector<VertexAttribute_t>& attributes =
+		pInstanceLayout->GetAttributes();
 
 	const uint32 instanceStride = pInstanceLayout->GetStride();
-	const uint64 uploadSize = uint64(instanceCount) * instanceStride;
-	uint32& instanceVertexBuffer = m_InstanceVertexBuffers[m_InstanceBufferIndex];
-	uint64& instanceVertexBufferSize = m_InstanceVertexBufferSizes[m_InstanceBufferIndex];
+	uint32 scratchInstanceCount = instanceCount;
+	if (scratchInstanceCount > s_MaxIndexedInstancesPerDraw)
+	{
+		Warning(
+			"[CGlRenderer] Instance count %u exceeds scratch capacity %u\n",
+			instanceCount,
+			s_MaxIndexedInstancesPerDraw);
 
-	CUtlVector<float32> transposedData;
-	transposedData.SetCount(int32(instanceCount) * 16);
-	for (uint32 i = 0; i < instanceCount; i++)
+		scratchInstanceCount = s_MaxIndexedInstancesPerDraw;
+	}
+
+	const uint64 uploadSize = uint64(scratchInstanceCount) * instanceStride;
+	uint32& instanceVertexBuffer = m_InstanceVertexBuffers[m_InstanceBufferIndex];
+	uint64& instanceVertexBufferSize =
+		m_InstanceVertexBufferSizes[m_InstanceBufferIndex];
+
+	float32* pScratch = m_InstanceScratch.Base();
+	for (uint32 i = 0; i < scratchInstanceCount; i++)
 	{
 		const CMatrix4& matrix = pMatrices[i];
-		float32* p = transposedData.Base() + i * 16;
+		float32* p = pScratch + i * 16;
 		for (int32 row = 0; row < 4; row++)
 		{
 			p[row * 4 + 0] = matrix.m_Data[row];
@@ -1922,7 +1971,7 @@ void CGlRenderer::DrawIndexedInstanced(
 		glBufferData(
 			GL_ARRAY_BUFFER,
 			uploadSize,
-			transposedData.Base(),
+			pScratch,
 			GL_DYNAMIC_DRAW);
 		instanceVertexBufferSize = uploadSize;
 	}
@@ -1932,7 +1981,7 @@ void CGlRenderer::DrawIndexedInstanced(
 			GL_ARRAY_BUFFER,
 			0,
 			uploadSize,
-			transposedData.Base());
+			pScratch);
 	}
 
 	for (int32 i = 0; i < attributes.Count(); i++)
@@ -1940,8 +1989,11 @@ void CGlRenderer::DrawIndexedInstanced(
 		const VertexAttribute_t& attribute = attributes[i];
 		if (attribute.m_Name.IsEmpty()) continue;
 
-		uint32 semanticLoc = GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
-		int32 loc = semanticLoc != 0xFFFFFFFFu ? static_cast<int32>(semanticLoc) : static_cast<int32>(attribute.m_Location);
+		uint32 semanticLoc =
+			GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
+		int32 loc = semanticLoc != 0xFFFFFFFFu
+			? static_cast<int32>(semanticLoc)
+			: static_cast<int32>(attribute.m_Location);
 		if (loc < 0) continue;
 		glEnableVertexAttribArray(loc);
 		glVertexAttribPointer(
@@ -1965,17 +2017,21 @@ void CGlRenderer::DrawIndexedInstanced(
 		int32(indexCount),
 		GL_UNSIGNED_INT,
 		reinterpret_cast<void*>(uint64(startIndex) * sizeof(uint32)),
-		int32(instanceCount));
+		int32(scratchInstanceCount));
 
-	m_InstanceBufferIndex = (m_InstanceBufferIndex + 1) % s_MaxInstanceStagingBuffers;
+	m_InstanceBufferIndex =
+		(m_InstanceBufferIndex + 1) % s_MaxInstanceStagingBuffers;
 
 	for (int32 i = 0; i < attributes.Count(); i++)
 	{
 		const VertexAttribute_t& attribute = attributes[i];
 		if (attribute.m_Name.IsEmpty()) continue;
 
-		uint32 semanticLoc = GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
-		int32 loc = semanticLoc != 0xFFFFFFFFu ? static_cast<int32>(semanticLoc) : static_cast<int32>(attribute.m_Location);
+		uint32 semanticLoc =
+			GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
+		int32 loc = semanticLoc != 0xFFFFFFFFu
+			? static_cast<int32>(semanticLoc)
+			: static_cast<int32>(attribute.m_Location);
 		if (loc >= 0)
 		{
 			glVertexAttribDivisor(loc, 0);
@@ -2007,14 +2063,14 @@ void CGlRenderer::BindVertexAttributes(
 {
 	if (!pLayout)
 	{
-		Warning("[GLRenderer] Invalid vertex layout\n");
+		Warning("[CGlRenderer] Invalid vertex layout\n");
 
 		return;
 	}
 
 	if (m_PipelineState.m_hVertexBuffer == 0)
 	{
-		Warning("[GLRenderer] Invalid vertex buffer bound\n");
+		Warning("[CGlRenderer] Invalid vertex buffer bound\n");
 
 		return;
 	}
@@ -2024,7 +2080,7 @@ void CGlRenderer::BindVertexAttributes(
 	if (vertexBufferIndex == m_BufferResources.InvalidIndex())
 	{
 		Warning(
-			"[GLRenderer] Invalid vertex buffer handle: %d\n",
+			"[CGlRenderer] Invalid vertex buffer handle: %d\n",
 			m_PipelineState.m_hVertexBuffer);
 
 		return;
@@ -2035,7 +2091,7 @@ void CGlRenderer::BindVertexAttributes(
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
 		Warning(
-			"[GLRenderer] Invalid shader program handle: %d\n",
+			"[CGlRenderer] Invalid shader program handle: %d\n",
 			m_PipelineState.m_hShaderProgram);
 
 		return;
@@ -2048,7 +2104,9 @@ void CGlRenderer::BindVertexAttributes(
 	const CUtlVector<VertexAttribute_t>& attributes = pLayout->GetAttributes();
 	ProgramResource_t& programResource = m_ProgramResources.Element(programIndex);
 
-	for (int32 attributeIndex = 0; attributeIndex < attributes.Count(); attributeIndex++)
+	for (int32 attributeIndex = 0;
+		attributeIndex < attributes.Count();
+		attributeIndex++)
 	{
 		const VertexAttribute_t& attribute = attributes[attributeIndex];
 		if (attribute.m_Name.IsEmpty()) continue;
@@ -2059,7 +2117,8 @@ void CGlRenderer::BindVertexAttributes(
 			continue;
 		}
 
-		uint32 semanticLoc = GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
+		uint32 semanticLoc =
+			GetVertexSemanticAttributeIndex(attribute.m_VertexSemantic);
 		if (semanticLoc != 0xFFFFFFFFu)
 		{
 			loc = static_cast<GLint>(semanticLoc);
@@ -2131,7 +2190,7 @@ void CGlRenderer::FlushProgramState()
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
 		Warning(
-			"[GCMRenderer] Invalid shader program handle: %d\n",
+			"[CGlRenderer] Invalid shader program handle: %d\n",
 			m_PipelineState.m_hShaderProgram);
 
 		glUseProgram(0);

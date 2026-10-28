@@ -24,7 +24,7 @@
 	do { printf("[ERROR] "); printf(__VA_ARGS__); } while (0)
 
 // Assert
-#if !defined(NDEBUG)
+#ifndef NDEBUG
 
 	#define Assert(x) \
 		do { \
@@ -60,7 +60,7 @@
 	#define AssertFatal(x) do { if (!(x)) abort(); } while (0)
 #endif // NDEBUG
 
-#if !defined(NDEBUG)
+#ifndef NDEBUG
 	#define DebugMsg(...) \
 		do { printf("[DEBUG] "); printf(__VA_ARGS__); } while (0)
 #else // !NDEBUG

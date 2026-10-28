@@ -11,7 +11,7 @@
 
 #ifndef PLATFORM_PS3
 #include <GLFW/glfw3.h>
-#endif
+#endif // !PLATFORM_PS3
 
 float64 CTime::s_CurrentTime = 0.0;
 float64 CTime::s_LastTime = 0.0;
@@ -67,5 +67,6 @@ float64 CTime::GetTimeSinceStartup()
 	timeval tv;
 	gettimeofday(&tv, GCMGL_NULL);
 
-	return static_cast<float64>(tv.tv_sec) + static_cast<float64>(tv.tv_usec) / 1000000.0;
+	return static_cast<float64>(tv.tv_sec) +
+		static_cast<float64>(tv.tv_usec) / 1000000.0;
 }

@@ -22,7 +22,7 @@
 #include <altivec.h>
 #undef pixel
 #undef bool
-#endif
+#endif // SIMD_ENABLED
 
 #ifdef PS3_SPU_ENABLED
 #include "platform/ps3/spu/SpuCommon.h"
@@ -52,7 +52,7 @@ bool CGcmRenderer::Init(const RendererDesc_t& rendererDesc)
 	sys_mem_addr_t hostAddr;
 	if (sysMemoryAllocate(m_HostSize, SYS_MEMORY_PAGE_SIZE_1M, &hostAddr) != 0)
 	{
-		Error("[GCMRenderer] Failed to allocate host memory\n");
+		Error("[CGcmRenderer] Failed to allocate host memory\n");
 
 		return false;
 	}
@@ -132,7 +132,8 @@ bool CGcmRenderer::Init(const RendererDesc_t& rendererDesc)
 		sizeof(CSpuBatchTransformManager));
 	if (pSpuBatchTransformManagerMemory)
 	{
-		m_pSpuBatchTransformManager = new(pSpuBatchTransformManagerMemory) CSpuBatchTransformManager();
+		m_pSpuBatchTransformManager =
+			new(pSpuBatchTransformManagerMemory) CSpuBatchTransformManager();
 		if (!m_pSpuBatchTransformManager->Init())
 		{
 			m_pSpuBatchTransformManager->~CSpuBatchTransformManager();
@@ -145,14 +146,14 @@ bool CGcmRenderer::Init(const RendererDesc_t& rendererDesc)
 
 	if (!m_StaticHeap.Init(s_StaticHeapSize))
 	{
-		Error("[GCMRenderer] Failed to allocate static heap\n");
+		Error("[CGcmRenderer] Failed to allocate static heap\n");
 
 		return false;
 	}
 
 	if (!m_DynamicHeap.Init(s_DynamicHeapSize))
 	{
-		Error("[GCMRenderer] Failed to allocate dynamic heap\n");
+		Error("[CGcmRenderer] Failed to allocate dynamic heap\n");
 
 		return false;
 	}
@@ -205,7 +206,9 @@ void CGcmRenderer::Shutdown()
 		}
 	}
 
-	for (int32 i = m_TextureResources.FirstInorder(); m_TextureResources.IsValidIndex(i); i = m_TextureResources.NextInorder(i))
+	for (int32 i = m_TextureResources.FirstInorder();
+		m_TextureResources.IsValidIndex(i);
+		i = m_TextureResources.NextInorder(i))
 	{
 		TextureResource_t& textureResource = m_TextureResources.Element(i);
 		if (textureResource.m_pBuffer)
@@ -215,7 +218,9 @@ void CGcmRenderer::Shutdown()
 	}
 	m_TextureResources.RemoveAll();
 
-	for (int32 i = m_ProgramResources.FirstInorder(); m_ProgramResources.IsValidIndex(i); i = m_ProgramResources.NextInorder(i))
+	for (int32 i = m_ProgramResources.FirstInorder();
+		m_ProgramResources.IsValidIndex(i);
+		i = m_ProgramResources.NextInorder(i))
 	{
 		ProgramResource_t& programResource = m_ProgramResources.Element(i);
 		if (programResource.m_pFragmentProgramAligned)
@@ -228,7 +233,7 @@ void CGcmRenderer::Shutdown()
 		}
 		if (programResource.m_pVertexProgramAligned)
 		{
-			CUtlMemory::Free(programResource.m_pVertexProgramAligned);
+			CUtlMemory::AlignedFree(programResource.m_pVertexProgramAligned);
 		}
 	}
 	m_ProgramResources.RemoveAll();
@@ -237,7 +242,9 @@ void CGcmRenderer::Shutdown()
 
 	m_ProgramUniformBuffers.RemoveAll();
 
-	for (int32 i = m_BufferResources.FirstInorder(); m_BufferResources.IsValidIndex(i); i = m_BufferResources.NextInorder(i))
+	for (int32 i = m_BufferResources.FirstInorder();
+		m_BufferResources.IsValidIndex(i);
+		i = m_BufferResources.NextInorder(i))
 	{
 		BufferResource_t& bufferResource = m_BufferResources.Element(i);
 
@@ -468,7 +475,7 @@ RenderTargetHandle CGcmRenderer::CreateRenderTarget(
 		if (!colorAlloc.m_pPtr)
 		{
 			Warning(
-				"[GCMRenderer] Failed to allocate render target color buffer\n");
+				"[CGcmRenderer] Failed to allocate render target color buffer\n");
 
 			return 0;
 		}
@@ -504,7 +511,7 @@ RenderTargetHandle CGcmRenderer::CreateRenderTarget(
 			if (hColorTexture != 0) DestroyTexture(hColorTexture);
 
 			Warning(
-				"[GCMRenderer] Failed to allocate render target depth buffer\n");
+				"[CGcmRenderer] Failed to allocate render target depth buffer\n");
 
 			return 0;
 		}
@@ -623,7 +630,7 @@ RenderTargetHandle CGcmRenderer::CreateRenderTargetCube(
 		if (!colorAlloc.m_pPtr)
 		{
 			Warning(
-				"[GCMRenderer] Failed to allocate cubemap render target color buffer\n");
+				"[CGcmRenderer] Failed to allocate cubemap render target color buffer\n");
 
 			return 0;
 		}
@@ -659,7 +666,7 @@ RenderTargetHandle CGcmRenderer::CreateRenderTargetCube(
 			if (hColorTexture != 0) DestroyTexture(hColorTexture);
 
 			Warning(
-				"[GCMRenderer] Failed to allocate cubemap render target depth buffer\n");
+				"[CGcmRenderer] Failed to allocate cubemap render target depth buffer\n");
 
 			return 0;
 		}
@@ -786,7 +793,9 @@ void CGcmRenderer::DestroyRenderTarget(RenderTargetHandle hRenderTarget)
 	}
 }
 
-void CGcmRenderer::SetRenderTarget(RenderTargetHandle hRenderTarget, uint32 faceIndex)
+void CGcmRenderer::SetRenderTarget(
+	RenderTargetHandle hRenderTarget,
+	uint32 faceIndex)
 {
 	if (hRenderTarget == 0)
 	{
@@ -832,7 +841,8 @@ void CGcmRenderer::SetRenderTarget(RenderTargetHandle hRenderTarget, uint32 face
 			{
 				const TextureResource_t& colorRes = m_TextureResources.Element(
 					m_TextureResources.Find(renderTargetResource.m_hColorTexture));
-				renderTargetResource.m_Surface.colorOffset[0] = colorRes.m_Offset + faceOffset;
+				renderTargetResource.m_Surface.colorOffset[0] =
+					colorRes.m_Offset + faceOffset;
 			}
 			
 			if (renderTargetResource.m_hDepthTexture != 0)
@@ -843,7 +853,9 @@ void CGcmRenderer::SetRenderTarget(RenderTargetHandle hRenderTarget, uint32 face
 			}
 		}
 
-		rsxSetSurface(context, const_cast<gcmSurface*>(&renderTargetResource.m_Surface));
+		rsxSetSurface(
+			context,
+			const_cast<gcmSurface*>(&renderTargetResource.m_Surface));
 
 		Viewport_t viewport(
 			0.0f,
@@ -898,7 +910,7 @@ BufferHandle CGcmRenderer::CreateVertexBuffer(
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
 	if (!rsxAllocation.m_pPtr)
 	{
-		Error("[GCMRenderer] Failed to allocate vertex buffer memory\n");
+		Error("[CGcmRenderer] Failed to allocate vertex buffer memory\n");
 
 		return 0;
 	}
@@ -921,7 +933,7 @@ BufferHandle CGcmRenderer::CreateVertexBuffer(
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
-		Error("[GCMRenderer] Buffer resource map is full\n");
+		Error("[CGcmRenderer] Buffer resource map is full\n");
 
 		m_StaticHeap.Free(rsxAllocation);
 
@@ -940,7 +952,7 @@ BufferHandle CGcmRenderer::CreateIndexBuffer(
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
 	if (!rsxAllocation.m_pPtr)
 	{
-		Error("[GCMRenderer] Failed to allocate index buffer memory\n");
+		Error("[CGcmRenderer] Failed to allocate index buffer memory\n");
 
 		return 0;
 	}
@@ -963,7 +975,7 @@ BufferHandle CGcmRenderer::CreateIndexBuffer(
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
-		Error("[GCMRenderer] Buffer resource map is full\n");
+		Error("[CGcmRenderer] Buffer resource map is full\n");
 
 		m_StaticHeap.Free(rsxAllocation);
 
@@ -980,7 +992,7 @@ BufferHandle CGcmRenderer::CreateConstantBuffer(
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
 	if (!rsxAllocation.m_pPtr)
 	{
-		Error("[GCMRenderer] Failed to allocate constant buffer memory\n");
+		Error("[CGcmRenderer] Failed to allocate constant buffer memory\n");
 
 		return 0;
 	}
@@ -994,7 +1006,7 @@ BufferHandle CGcmRenderer::CreateConstantBuffer(
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
-		Error("[GCMRenderer] Buffer resource map is full\n");
+		Error("[CGcmRenderer] Buffer resource map is full\n");
 
 		m_StaticHeap.Free(rsxAllocation);
 
@@ -1013,7 +1025,7 @@ void CGcmRenderer::UpdateBuffer(
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGcmRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return;
 	}
@@ -1033,7 +1045,7 @@ void CGcmRenderer::DestroyBuffer(BufferHandle hBuffer)
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGcmRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return;
 	}
@@ -1059,7 +1071,7 @@ void* CGcmRenderer::MapBuffer(BufferHandle hBuffer)
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGcmRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return GCMGL_NULL;
 	}
@@ -1069,33 +1081,43 @@ void* CGcmRenderer::MapBuffer(BufferHandle hBuffer)
 
 void CGcmRenderer::UnmapBuffer(BufferHandle hBuffer)
 {
-	Warning("[GCMRenderer] UnmapBuffer not implemented\n");
+	Warning("[CGcmRenderer] UnmapBuffer not implemented\n");
 }
 
-ShaderProgramHandle CGcmRenderer::CreateShaderProgram(const CFixedString& shaderName)
+ShaderProgramHandle CGcmRenderer::CreateShaderProgram(
+	const CFixedString& shaderName)
 {
-	CFixedString vertexProgramPath = CFixedString("shaders/cg/") + shaderName + CFixedString(".vpo");
+	CFixedString vertexProgramPath =
+		CFixedString("shaders/cg/") + shaderName + CFixedString(".vpo");
 	CUtlVector<uint8> vertexProgramBin = CUtils::ReadBinaryFile(
 		vertexProgramPath);
 	if (vertexProgramBin.Count() == 0)
 	{
 		Warning(
-			"[GCMRenderer] Failed to read vertex program binary: %s\n",
+			"[CGcmRenderer] Failed to read vertex program binary: %s\n",
 			vertexProgramPath.Get());
 
 		return 0;
 	}
 
-	void* pVertexProgramAligned = memalign(
-		64,
-		uint32(vertexProgramBin.Count()));
+	void* pVertexProgramAligned = CUtlMemory::AlignedAlloc(
+		vertexProgramBin.Count(),
+		64);
+	if (!pVertexProgramAligned)
+	{
+		Warning(
+			"[CGcmRenderer] Failed to allocate vertex program memory\n");
+
+		return 0;
+	}
+
 	memcpy(
 		pVertexProgramAligned,
 		vertexProgramBin.Base(),
 		uint32(vertexProgramBin.Count()));
 
-	const rsxVertexProgram* pVertexProgram = reinterpret_cast<const rsxVertexProgram*>(
-		pVertexProgramAligned);
+	const rsxVertexProgram* pVertexProgram =
+		reinterpret_cast<const rsxVertexProgram*>(pVertexProgramAligned);
 	void* pVertexProgramUCode;
 	uint32 vertexProgramSize;
 	rsxVertexProgramGetUCode(
@@ -1103,16 +1125,17 @@ ShaderProgramHandle CGcmRenderer::CreateShaderProgram(const CFixedString& shader
 		&pVertexProgramUCode,
 		&vertexProgramSize);
 
-	CFixedString fragmentProgramPath = CFixedString("shaders/cg/") + shaderName + CFixedString(".fpo");
+	CFixedString fragmentProgramPath =
+		CFixedString("shaders/cg/") + shaderName + CFixedString(".fpo");
 	CUtlVector<uint8> fragmentProgramBin = CUtils::ReadBinaryFile(
 		fragmentProgramPath);
 	if (fragmentProgramBin.Count() == 0)
 	{
 		Warning(
-			"[GCMRenderer] Failed to read fragment program binary: %s\n",
+			"[CGcmRenderer] Failed to read fragment program binary: %s\n",
 			fragmentProgramPath.Get());
 
-		CUtlMemory::Free(pVertexProgramAligned);
+		CUtlMemory::AlignedFree(pVertexProgramAligned);
 
 		return 0;
 	}
@@ -1122,9 +1145,9 @@ ShaderProgramHandle CGcmRenderer::CreateShaderProgram(const CFixedString& shader
 	if (!fragmentProgramAlloc.m_pPtr)
 	{
 		Warning(
-			"[GCMRenderer] Failed to allocate fragment program memory\n");
+			"[CGcmRenderer] Failed to allocate fragment program memory\n");
 
-		CUtlMemory::Free(pVertexProgramAligned);
+		CUtlMemory::AlignedFree(pVertexProgramAligned);
 
 		return 0;
 	}
@@ -1134,8 +1157,8 @@ ShaderProgramHandle CGcmRenderer::CreateShaderProgram(const CFixedString& shader
 		fragmentProgramBin.Base(),
 		uint32(fragmentProgramBin.Count()));
 
-	const rsxFragmentProgram* pFragmentProgram = reinterpret_cast<const rsxFragmentProgram*>(
-		pFragmentProgramAligned);
+	const rsxFragmentProgram* pFragmentProgram =
+		reinterpret_cast<const rsxFragmentProgram*>(pFragmentProgramAligned);
 	void* pFragmentProgramCode;
 	uint32 fragmentProgramSize;
 	rsxFragmentProgramGetUCode(
@@ -1148,10 +1171,10 @@ ShaderProgramHandle CGcmRenderer::CreateShaderProgram(const CFixedString& shader
 	if (!fragmentProgramBufferAlloc.m_pPtr)
 	{
 		Warning(
-			"[GCMRenderer] Failed to allocate fragment program buffer memory\n");
+			"[CGcmRenderer] Failed to allocate fragment program buffer memory\n");
 
 		m_StaticHeap.Free(fragmentProgramAlloc);
-		CUtlMemory::Free(pVertexProgramAligned);
+		CUtlMemory::AlignedFree(pVertexProgramAligned);
 
 		return 0;
 	}
@@ -1182,7 +1205,7 @@ void CGcmRenderer::DestroyShaderProgram(ShaderProgramHandle hProgram)
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGcmRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1191,7 +1214,7 @@ void CGcmRenderer::DestroyShaderProgram(ShaderProgramHandle hProgram)
 		programIndex);
 	if (programResource.m_pVertexProgramAligned)
 	{
-		CUtlMemory::Free(programResource.m_pVertexProgramAligned);
+		CUtlMemory::AlignedFree(programResource.m_pVertexProgramAligned);
 	}
 	if (programResource.m_pFragmentProgramAligned)
 	{
@@ -1216,7 +1239,7 @@ TextureHandle CGcmRenderer::CreateTexture2D(
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(textureBufferSize, 128);
 	if (!rsxAllocation.m_pPtr)
 	{
-		Warning("[GCMRenderer] Failed to allocate texture buffer memory\n");
+		Warning("[CGcmRenderer] Failed to allocate texture buffer memory\n");
 
 		return 0;
 	}
@@ -1305,7 +1328,7 @@ TextureHandle CGcmRenderer::CreateTextureCube(
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(textureBufferSize, 128);
 	if (!rsxAllocation.m_pPtr)
 	{
-		Warning("[GCMRenderer] Failed to allocate texture buffer memory\n");
+		Warning("[CGcmRenderer] Failed to allocate texture buffer memory\n");
 
 		return 0;
 	}
@@ -1315,7 +1338,8 @@ TextureHandle CGcmRenderer::CreateTextureCube(
 	{
 		if (!pFaces || !pFaces[i]) continue;
 
-		uint8* pDst = reinterpret_cast<uint8*>(pTextureBuffer) + uint32(i) * size * size * 4;
+		uint8* pDst = reinterpret_cast<uint8*>(pTextureBuffer) +
+			uint32(i) * size * size * 4;
 		const uint8* pSrc = reinterpret_cast<const uint8*>(pFaces[i]);
 
 		switch (format)
@@ -1400,7 +1424,7 @@ void CGcmRenderer::SetTexture(
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid texture handle: %d\n", hTexture);
+		Warning("[CGcmRenderer] Invalid texture handle: %d\n", hTexture);
 
 		return;
 	}
@@ -1445,8 +1469,10 @@ void CGcmRenderer::SetTexture(
 	gcmTex.format = static_cast<uint8>(gcmTextureFormat);
 	gcmTex.mipmap = 1;
 	gcmTex.dimension = GCM_TEXTURE_DIMS_2D;
-	gcmTex.cubemap = static_cast<uint8>(textureResource.m_IsCubemap ? GCM_TRUE : GCM_FALSE);
-	gcmTex.remap = ((GCM_TEXTURE_REMAP_TYPE_REMAP << GCM_TEXTURE_REMAP_TYPE_B_SHIFT) |
+	gcmTex.cubemap =
+		static_cast<uint8>(textureResource.m_IsCubemap ? GCM_TRUE : GCM_FALSE);
+	gcmTex.remap =
+		((GCM_TEXTURE_REMAP_TYPE_REMAP << GCM_TEXTURE_REMAP_TYPE_B_SHIFT) |
 				  (GCM_TEXTURE_REMAP_TYPE_REMAP << GCM_TEXTURE_REMAP_TYPE_G_SHIFT) |
 				  (GCM_TEXTURE_REMAP_TYPE_REMAP << GCM_TEXTURE_REMAP_TYPE_R_SHIFT) |
 				  (GCM_TEXTURE_REMAP_TYPE_REMAP << GCM_TEXTURE_REMAP_TYPE_A_SHIFT) |
@@ -1510,7 +1536,7 @@ void CGcmRenderer::SetTextureCompareMode(
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid texture handle: %d\n", hTexture);
+		Warning("[CGcmRenderer] Invalid texture handle: %d\n", hTexture);
 
 		return;
 	}
@@ -1533,7 +1559,7 @@ void CGcmRenderer::SetSampler(
 	uint32 slot,
 	ShaderStage_t stage)
 {
-	Warning("[GCMRenderer] SetSampler not implemented\n");
+	Warning("[CGcmRenderer] SetSampler not implemented\n");
 }
 
 void CGcmRenderer::UpdateTexture(
@@ -1541,7 +1567,7 @@ void CGcmRenderer::UpdateTexture(
 	const void* pData,
 	uint32 mipLevel)
 {
-	Warning("[GCMRenderer] UpdateTexture not implemented\n");
+	Warning("[CGcmRenderer] UpdateTexture not implemented\n");
 }
 
 void CGcmRenderer::DestroyTexture(TextureHandle hTexture)
@@ -1549,13 +1575,14 @@ void CGcmRenderer::DestroyTexture(TextureHandle hTexture)
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid texture handle: %d\n", hTexture);
+		Warning("[CGcmRenderer] Invalid texture handle: %d\n", hTexture);
 
 		return;
 	}
 
 	void* pTextureBuffer = m_TextureResources.Element(textureIndex).m_pBuffer;
-	if (pTextureBuffer) m_StaticHeap.Free(m_TextureResources.Element(textureIndex).m_Alloc);
+	if (pTextureBuffer) m_StaticHeap.Free(
+		m_TextureResources.Element(textureIndex).m_Alloc);
 
 	m_TextureResources.Remove(hTexture);
 }
@@ -1569,7 +1596,7 @@ void CGcmRenderer::SetConstantBuffer(
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid buffer handle: %d\n", hBuffer);
+		Warning("[CGcmRenderer] Invalid buffer handle: %d\n", hBuffer);
 
 		return;
 	}
@@ -1578,7 +1605,7 @@ void CGcmRenderer::SetConstantBuffer(
 	if (layoutIndex == m_UniformBlockLayouts.InvalidIndex())
 	{
 		Warning(
-			"[GCMRenderer] Invalid uniform block layout handle: %d\n",
+			"[CGcmRenderer] Invalid uniform block layout handle: %d\n",
 			hLayout);
 
 		return;
@@ -1586,7 +1613,7 @@ void CGcmRenderer::SetConstantBuffer(
 
 	if (m_PipelineState.m_hShaderProgram == 0)
 	{
-		Warning("[GCMRenderer] Invalid shader program bound\n");
+		Warning("[CGcmRenderer] Invalid shader program bound\n");
 
 		return;
 	}
@@ -1600,7 +1627,8 @@ void CGcmRenderer::SetConstantBuffer(
 		hLayout,
 		boundUniform);
 
-	UniformShadow_t& uniformShadow = m_ProgramUniformShadows[m_PipelineState.m_hShaderProgram][hLayout];
+	UniformShadow_t& uniformShadow =
+		m_ProgramUniformShadows[m_PipelineState.m_hShaderProgram][hLayout];
 	const UniformBlockLayout_t& uniformLayout = m_UniformBlockLayouts.Element(
 		layoutIndex);
 	if (uniformShadow.m_Data.Count() < int32(uniformLayout.m_Size))
@@ -1688,7 +1716,7 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 {
 	if (hProgram == 0)
 	{
-		Warning("[GCMRenderer] Invalid shader program bound\n");
+		Warning("[CGcmRenderer] Invalid shader program bound\n");
 
 		return;
 	}
@@ -1702,7 +1730,7 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGcmRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1712,7 +1740,9 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 	ProgramResource_t& programResource = m_ProgramResources.Element(
 		programIndex);
 
-	for (int32 uniformIndex = uniforms.FirstInorder(); uniforms.IsValidIndex(uniformIndex); uniformIndex = uniforms.NextInorder(uniformIndex))
+	for (int32 uniformIndex = uniforms.FirstInorder();
+		uniforms.IsValidIndex(uniformIndex);
+		uniformIndex = uniforms.NextInorder(uniformIndex))
 	{
 		const BoundUniform_t& boundUniform = uniforms.Element(uniformIndex);
 		if (!(boundUniform.m_Stage & ShaderStageVertex)) continue;
@@ -1737,7 +1767,11 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 		const float32* pBufferData = reinterpret_cast<const float32*>(
 			m_BufferResources.Element(bufferIndex).m_pPtr);
 
-		bool hasChanged = uniformShadow.m_IsVertexDirty || (memcmp(uniformShadow.m_Data.Base(), pBufferData, uniformLayout.m_Size) != 0);
+		bool hasChanged = uniformShadow.m_IsVertexDirty ||
+			(memcmp(
+				uniformShadow.m_Data.Base(),
+				pBufferData,
+				uniformLayout.m_Size) != 0);
 		if (!hasChanged) continue;
 
 		memcpy(uniformShadow.m_Data.Base(), pBufferData, uniformLayout.m_Size);
@@ -1746,16 +1780,21 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 
 		if (uniformLayout.m_UniformNames.IsEmpty()) continue;
 
-		CUtlMap<CFixedString, rsxProgramConst*>& constCache = programResource.m_VertexProgramConstCache;
+		CUtlMap<CFixedString, rsxProgramConst*>& constCache =
+			programResource.m_VertexProgramConstCache;
 		const uint8* pShadowData = uniformShadow.m_Data.Base();
 
 		bool hasUniformMetadata =
-			uniformLayout.m_UniformOffsets.Count() == uniformLayout.m_UniformNames.Count() &&
+			uniformLayout.m_UniformOffsets.Count() ==
+			uniformLayout.m_UniformNames.Count() &&
 			uniformLayout.m_UniformSizes.Count() == uniformLayout.m_UniformNames.Count();
 
-		for (int32 uniformNameIndex = 0; uniformNameIndex < uniformLayout.m_UniformNames.Count(); uniformNameIndex++)
+		for (int32 uniformNameIndex = 0;
+			uniformNameIndex < uniformLayout.m_UniformNames.Count();
+			uniformNameIndex++)
 		{
-			const CFixedString& uniformName = uniformLayout.m_UniformNames[uniformNameIndex];
+			const CFixedString& uniformName =
+				uniformLayout.m_UniformNames[uniformNameIndex];
 
 			int32 constCacheIndex = constCache.Find(uniformName);
 			rsxProgramConst* pConst = (constCacheIndex != constCache.InvalidIndex()) ?
@@ -1775,7 +1814,7 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 				if (constCacheIndex == constCache.InvalidIndex())
 				{
 					Warning(
-						"[GCMRenderer] Const: %s not found in prog: %u\n",
+						"[CGcmRenderer] Const: %s not found in prog: %u\n",
 						uniformName.Get(),
 						hProgram);
 				}
@@ -1786,13 +1825,17 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 			const uint8* pElementBytes = pShadowData +
 				(hasUniformMetadata ?
 					uniformLayout.m_UniformOffsets[uniformNameIndex] :
-					uint32(uniformNameIndex) * (uniformLayout.m_Size / uniformLayout.m_UniformNames.Count()));
+					uint32(uniformNameIndex) *
+						(uniformLayout.m_Size /
+							uniformLayout.m_UniformNames.Count()));
 			const float32* pElementData = reinterpret_cast<const float32*>(
 				pElementBytes);
 
 			if ((hasUniformMetadata ?
 					uniformLayout.m_UniformSizes[uniformNameIndex] :
-					(uniformLayout.m_Size / uniformLayout.m_UniformNames.Count())) == sizeof(CMatrix4))
+					(uniformLayout.m_Size /
+						uniformLayout.m_UniformNames.Count())) ==
+				sizeof(CMatrix4))
 			{
 				float32 transposed[16];
 				for (uint32 row = 0; row < 4; row++)
@@ -1829,7 +1872,7 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 {
 	if (hProgram == 0)
 	{
-		Warning("[GCMRenderer] Invalid shader program bound\n");
+		Warning("[CGcmRenderer] Invalid shader program bound\n");
 
 		return;
 	}
@@ -1843,7 +1886,7 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
-		Warning("[GCMRenderer] Invalid shader program handle: %d\n", hProgram);
+		Warning("[CGcmRenderer] Invalid shader program handle: %d\n", hProgram);
 
 		return;
 	}
@@ -1853,7 +1896,9 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 	ProgramResource_t& programResource = m_ProgramResources.Element(
 		programIndex);
 
-	for (int32 uniformIndex = uniforms.FirstInorder(); uniforms.IsValidIndex(uniformIndex); uniformIndex = uniforms.NextInorder(uniformIndex))
+	for (int32 uniformIndex = uniforms.FirstInorder();
+		uniforms.IsValidIndex(uniformIndex);
+		uniformIndex = uniforms.NextInorder(uniformIndex))
 	{
 		const BoundUniform_t& boundUniform = uniforms.Element(uniformIndex);
 		if (!(boundUniform.m_Stage & ShaderStageFragment)) continue;
@@ -1878,7 +1923,11 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 		const float32* pBufferData = reinterpret_cast<const float32*>(
 			m_BufferResources.Element(bufferIndex).m_pPtr);
 
-		bool hasChanged = uniformShadow.m_IsFragmentDirty || (memcmp(uniformShadow.m_Data.Base(), pBufferData, uniformLayout.m_Size) != 0);
+		bool hasChanged = uniformShadow.m_IsFragmentDirty ||
+			(memcmp(
+				uniformShadow.m_Data.Base(),
+				pBufferData,
+				uniformLayout.m_Size) != 0);
 		if (!hasChanged) continue;
 
 		memcpy(uniformShadow.m_Data.Base(), pBufferData, uniformLayout.m_Size);
@@ -1890,18 +1939,23 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 		rsxProgramConst* pFragmentConsts = rsxFragmentProgramGetConsts(
 			const_cast<rsxFragmentProgram*>(programResource.m_pFragmentProgram));
 
-		CUtlMap<CFixedString, rsxProgramConst*>& constCache = programResource.m_FragmentProgramConstCache;
+		CUtlMap<CFixedString, rsxProgramConst*>& constCache =
+			programResource.m_FragmentProgramConstCache;
 		const uint8* pShadowData = uniformShadow.m_Data.Base();
 
 		bool hasUniformMetadata =
-			uniformLayout.m_UniformOffsets.Count() == uniformLayout.m_UniformNames.Count() &&
+			uniformLayout.m_UniformOffsets.Count() ==
+			uniformLayout.m_UniformNames.Count() &&
 			uniformLayout.m_UniformSizes.Count() == uniformLayout.m_UniformNames.Count();
 
-		for (int32 uniformNameIndex = 0; uniformNameIndex < uniformLayout.m_UniformNames.Count(); uniformNameIndex++)
+		for (int32 uniformNameIndex = 0;
+			uniformNameIndex < uniformLayout.m_UniformNames.Count();
+			uniformNameIndex++)
 		{
 			if (!pFragmentConsts) continue;
 
-			const CFixedString& uniformName = uniformLayout.m_UniformNames[uniformNameIndex];
+			const CFixedString& uniformName =
+				uniformLayout.m_UniformNames[uniformNameIndex];
 
 			int32 constCacheIndex = constCache.Find(uniformName);
 			rsxProgramConst* pConst = (constCacheIndex != constCache.InvalidIndex()) ?
@@ -1928,7 +1982,9 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 					pShadowData +
 					(hasUniformMetadata ?
 						uniformLayout.m_UniformOffsets[uniformNameIndex] :
-						uint32(uniformNameIndex) * (uniformLayout.m_Size / uniformLayout.m_UniformNames.Count()))),
+						uint32(uniformNameIndex) *
+							(uniformLayout.m_Size /
+								uniformLayout.m_UniformNames.Count()))),
 				programResource.m_FragmentProgramOffset,
 				GCM_LOCATION_RSX);
 		}
@@ -1978,14 +2034,14 @@ void CGcmRenderer::DrawIndexed(
 {
 	if (m_PipelineState.m_hIndexBuffer == 0)
 	{
-		Warning("[GCMRenderer] Invalid index buffer bound\n");
+		Warning("[CGcmRenderer] Invalid index buffer bound\n");
 
 		return;
 	}
 
 	if (m_PipelineState.m_hShaderProgram == 0)
 	{
-		Warning("[GCMRenderer] Invalid shader program bound\n");
+		Warning("[CGcmRenderer] Invalid shader program bound\n");
 
 		return;
 	}
@@ -2005,7 +2061,7 @@ void CGcmRenderer::DrawIndexed(
 	if (indexBufferIndex == m_BufferResources.InvalidIndex())
 	{
 		Warning(
-			"[GCMRenderer] Invalid index buffer handle: %d\n",
+			"[CGcmRenderer] Invalid index buffer handle: %d\n",
 			m_PipelineState.m_hIndexBuffer);
 
 		return;
@@ -2016,7 +2072,10 @@ void CGcmRenderer::DrawIndexed(
 
 	FlushPipelineState();
 
-	uint32 indexOffset = m_BufferResources.Element(indexBufferIndex).m_Offset + (startIndex * uint32(sizeof(uint32))) + uint32(m_PipelineState.m_IndexOffset);
+	uint32 indexOffset =
+		m_BufferResources.Element(indexBufferIndex).m_Offset +
+		(startIndex * uint32(sizeof(uint32))) +
+		uint32(m_PipelineState.m_IndexOffset);
 	rsxDrawIndexArray(
 		context,
 		GCM_TYPE_TRIANGLES,
@@ -2041,7 +2100,8 @@ void CGcmRenderer::DrawInstanced(
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex()) return;
 
-	const CUtlVector<VertexAttribute_t>& attributes = pInstanceLayout->GetAttributes();
+	const CUtlVector<VertexAttribute_t>& attributes =
+		pInstanceLayout->GetAttributes();
 	const uint32 instanceStride = pInstanceLayout->GetStride();
 	StagingBuffer_t& instanceBuffer = m_InstanceBuffers[m_InstanceBufferIndex];
 	const uint32 alignedSize = ((instanceCount * instanceStride) + 127) & ~127;
@@ -2053,7 +2113,7 @@ void CGcmRenderer::DrawInstanced(
 		instanceBuffer.m_pPtr = instanceBuffer.m_Alloc.m_pPtr;
 		if (!instanceBuffer.m_pPtr)
 		{
-			Warning("[GCMRenderer] Staging heap OOM for instance buffer\n");
+			Warning("[CGcmRenderer] Staging heap OOM for instance buffer\n");
 
 			return;
 		}
@@ -2138,7 +2198,8 @@ void CGcmRenderer::DrawInstanced(
 
 	rsxFlushBuffer(context);
 
-	m_InstanceBufferIndex = (m_InstanceBufferIndex + 1) % s_MaxInstanceStagingBuffers;
+	m_InstanceBufferIndex =
+		(m_InstanceBufferIndex + 1) % s_MaxInstanceStagingBuffers;
 }
 
 void CGcmRenderer::DrawIndexedInstanced(
@@ -2340,7 +2401,7 @@ void CGcmRenderer::DrawInstanced(
 	const CMatrix4* pMatrices,
 	const CVertexLayout* pInstanceLayout)
 {
-	Warning("[GCMRenderer] DrawInstanced not implemented\n");
+	Warning("[CGcmRenderer] DrawInstanced not implemented\n");
 }
 void CGcmRenderer::DrawIndexedInstanced(
 	uint32 indexCount,
@@ -2349,7 +2410,7 @@ void CGcmRenderer::DrawIndexedInstanced(
 	uint32 startIndex,
 	const CVertexLayout* pInstanceLayout)
 {
-	Warning("[GCMRenderer] DrawIndexedInstanced not implemented\n");
+	Warning("[CGcmRenderer] DrawIndexedInstanced not implemented\n");
 }
 #endif // !SHADER_INSTANCING_ENABLED
 
@@ -2387,14 +2448,14 @@ void CGcmRenderer::BindVertexAttributes(
 {
 	if (!pLayout)
 	{
-		Warning("[GCMRenderer] Invalid vertex layout\n");
+		Warning("[CGcmRenderer] Invalid vertex layout\n");
 
 		return;
 	}
 
 	if (m_PipelineState.m_hVertexBuffer == 0)
 	{
-		Warning("[GCMRenderer] Invalid vertex buffer bound\n");
+		Warning("[CGcmRenderer] Invalid vertex buffer bound\n");
 
 		return;
 	}
@@ -2404,7 +2465,7 @@ void CGcmRenderer::BindVertexAttributes(
 	if (vertexBufferIndex == m_BufferResources.InvalidIndex())
 	{
 		Warning(
-			"[GCMRenderer] Invalid vertex buffer handle: %d\n",
+			"[CGcmRenderer] Invalid vertex buffer handle: %d\n",
 			m_PipelineState.m_hVertexBuffer);
 
 		return;
@@ -2412,28 +2473,33 @@ void CGcmRenderer::BindVertexAttributes(
 
 	if (m_PipelineState.m_hShaderProgram == 0)
 	{
-		Warning("[GCMRenderer] Invalid shader program bound\n");
+		Warning("[CGcmRenderer] Invalid shader program bound\n");
 
 		return;
 	}
 
-	if (m_ProgramResources.Find(m_PipelineState.m_hShaderProgram) == m_ProgramResources.InvalidIndex())
+	if (m_ProgramResources.Find(m_PipelineState.m_hShaderProgram) ==
+		m_ProgramResources.InvalidIndex())
 	{
 		Warning(
-			"[GCMRenderer] Invalid shader program handle: %d\n",
+			"[CGcmRenderer] Invalid shader program handle: %d\n",
 			m_PipelineState.m_hShaderProgram);
 
 		return;
 	}
 
 	const CUtlVector<VertexAttribute_t>& attributes = pLayout->GetAttributes();
-	for (int32 attributeIndex = 0; attributeIndex < attributes.Count(); attributeIndex++)
+	for (int32 attributeIndex = 0;
+		attributeIndex < attributes.Count();
+		attributeIndex++)
 	{
 		const VertexAttribute_t& attribute = attributes[attributeIndex];
 		if (attribute.m_Name.IsEmpty()) continue;
 
-		void* pAttributePtr = reinterpret_cast<char*>(
-			m_BufferResources.Element(vertexBufferIndex).m_pPtr) + offset + attribute.m_Offset;
+		void* pAttributePtr =
+			reinterpret_cast<char*>(
+				m_BufferResources.Element(vertexBufferIndex).m_pPtr) +
+			offset + attribute.m_Offset;
 		uint32 attributeLocation = 0xFFFFFFFF;
 		uint32 attributeOffset;
 		uint32 components;
@@ -2501,7 +2567,7 @@ void CGcmRenderer::FlushProgramState()
 {
 	if (m_PipelineState.m_hShaderProgram == 0)
 	{
-		Warning("[GCMRenderer] Invalid shader program bound\n");
+		Warning("[CGcmRenderer] Invalid shader program bound\n");
 
 		return;
 	}
@@ -2511,7 +2577,7 @@ void CGcmRenderer::FlushProgramState()
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
 		Warning(
-			"[GCMRenderer] Invalid shader program handle: %d\n",
+			"[CGcmRenderer] Invalid shader program handle: %d\n",
 			m_PipelineState.m_hShaderProgram);
 
 		return;
@@ -2539,9 +2605,11 @@ void CGcmRenderer::MarkUniformsDirty(ShaderProgramHandle hProgram)
 		return;
 	}
 
-	CUtlMap<uint32, UniformShadow_t>& uniformShadows = m_ProgramUniformShadows.Element(
-		uniformShadowsIndex);
-	for (int32 i = uniformShadows.FirstInorder(); uniformShadows.IsValidIndex(i); i = uniformShadows.NextInorder(i))
+	CUtlMap<uint32, UniformShadow_t>& uniformShadows =
+		m_ProgramUniformShadows.Element(uniformShadowsIndex);
+	for (int32 i = uniformShadows.FirstInorder();
+		uniformShadows.IsValidIndex(i);
+		i = uniformShadows.NextInorder(i))
 	{
 		uniformShadows.Element(i).m_IsVertexDirty = true;
 		uniformShadows.Element(i).m_IsFragmentDirty = true;

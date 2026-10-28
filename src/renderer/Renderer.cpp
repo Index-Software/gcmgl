@@ -90,8 +90,10 @@ bool PipelineState_t::operator==(const PipelineState_t& other) const
 		m_hIndexBuffer == other.m_hIndexBuffer &&
 		m_VertexStride == other.m_VertexStride &&
 		m_VertexOffset == other.m_VertexOffset &&
-		m_DepthStencilState.m_IsDepthTest == other.m_DepthStencilState.m_IsDepthTest &&
-		m_DepthStencilState.m_IsDepthWrite == other.m_DepthStencilState.m_IsDepthWrite &&
+		m_DepthStencilState.m_IsDepthTest ==
+			other.m_DepthStencilState.m_IsDepthTest &&
+		m_DepthStencilState.m_IsDepthWrite ==
+			other.m_DepthStencilState.m_IsDepthWrite &&
 		m_BlendState.m_IsEnabled == other.m_BlendState.m_IsEnabled;
 }
 
@@ -103,7 +105,8 @@ BufferHandle CRenderer::CreateStagingBuffer(uint64 size)
 ShaderProgramHandle CRenderer::GetOrCreateShaderProgram(
 	const CFixedString& shaderName)
 {
-	CUtlMap<CFixedString, ShaderProgramHandle>::Index_t index = m_ShaderCache.Find(shaderName);
+	CUtlMap<CFixedString, ShaderProgramHandle>::Index_t index =
+		m_ShaderCache.Find(shaderName);
 	if (index != m_ShaderCache.InvalidIndex())
 	{
 		return m_ShaderCache.Element(index);
@@ -120,7 +123,8 @@ ShaderProgramHandle CRenderer::GetOrCreateShaderProgram(
 
 void CRenderer::ClearShaderCache()
 {
-	for (CUtlMap<CFixedString, ShaderProgramHandle>::Index_t i = m_ShaderCache.FirstInorder();
+	for (CUtlMap<CFixedString, ShaderProgramHandle>::Index_t i =
+		m_ShaderCache.FirstInorder();
 		i != m_ShaderCache.InvalidIndex();
 		i = m_ShaderCache.NextInorder(i))
 	{
@@ -137,7 +141,8 @@ void CRenderer::SetShaderProgram(ShaderProgramHandle hProgram)
 	}
 
 	m_PipelineState.m_hShaderProgram = hProgram;
-	m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::Program | StateDirtyFlags_t::Uniforms;
+	m_StateDirtyFlags = m_StateDirtyFlags |
+		StateDirtyFlags_t::Program | StateDirtyFlags_t::Uniforms;
 }
 
 void CRenderer::SetVertexBuffer(
@@ -163,7 +168,8 @@ void CRenderer::SetVertexBuffer(
 
 void CRenderer::SetIndexBuffer(BufferHandle hBuffer, uint64 offset)
 {
-	if (m_PipelineState.m_hIndexBuffer != hBuffer || m_PipelineState.m_IndexOffset != offset)
+	if (m_PipelineState.m_hIndexBuffer != hBuffer ||
+		m_PipelineState.m_IndexOffset != offset)
 	{
 		m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::IndexBuffer;
 	}
@@ -234,7 +240,8 @@ void CRenderer::SetPipelineState(const PipelineState_t& state)
 
 	if (m_PipelineState.m_hShaderProgram != state.m_hShaderProgram)
 	{
-		m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::Program | StateDirtyFlags_t::Uniforms;
+		m_StateDirtyFlags = m_StateDirtyFlags |
+		StateDirtyFlags_t::Program | StateDirtyFlags_t::Uniforms;
 	}
 
 	if (m_PipelineState.m_hVertexBuffer != state.m_hVertexBuffer)
@@ -247,8 +254,10 @@ void CRenderer::SetPipelineState(const PipelineState_t& state)
 		m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::IndexBuffer;
 	}
 
-	if (m_PipelineState.m_DepthStencilState.m_IsDepthTest != state.m_DepthStencilState.m_IsDepthTest ||
-		m_PipelineState.m_DepthStencilState.m_IsDepthWrite != state.m_DepthStencilState.m_IsDepthWrite)
+	if (m_PipelineState.m_DepthStencilState.m_IsDepthTest !=
+			state.m_DepthStencilState.m_IsDepthTest ||
+		m_PipelineState.m_DepthStencilState.m_IsDepthWrite !=
+			state.m_DepthStencilState.m_IsDepthWrite)
 	{
 		m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::DepthStencilState;
 	}
@@ -263,12 +272,14 @@ void CRenderer::SetPipelineState(const PipelineState_t& state)
 
 void CRenderer::FlushPipelineState()
 {
-	if ((m_StateDirtyFlags & StateDirtyFlags_t::Program) != StateDirtyFlags_t::None)
+	if ((m_StateDirtyFlags & StateDirtyFlags_t::Program) !=
+		StateDirtyFlags_t::None)
 	{
 		FlushProgramState();
 	}
 
-	if ((m_StateDirtyFlags & StateDirtyFlags_t::VertexBuffer) != StateDirtyFlags_t::None &&
+	if ((m_StateDirtyFlags & StateDirtyFlags_t::VertexBuffer) !=
+			StateDirtyFlags_t::None &&
 		m_PipelineState.m_pVertexLayout != GCMGL_NULL)
 	{
 		BindVertexAttributes(
@@ -277,17 +288,20 @@ void CRenderer::FlushPipelineState()
 			m_PipelineState.m_VertexOffset);
 	}
 
-	if ((m_StateDirtyFlags & StateDirtyFlags_t::BlendState) != StateDirtyFlags_t::None)
+	if ((m_StateDirtyFlags & StateDirtyFlags_t::BlendState) !=
+		StateDirtyFlags_t::None)
 	{
 		SetBlendState(m_PipelineState.m_BlendState);
 	}
 
-	if ((m_StateDirtyFlags & StateDirtyFlags_t::DepthStencilState) != StateDirtyFlags_t::None)
+	if ((m_StateDirtyFlags & StateDirtyFlags_t::DepthStencilState) !=
+		StateDirtyFlags_t::None)
 	{
 		SetDepthStencilState(m_PipelineState.m_DepthStencilState);
 	}
 
-	if ((m_StateDirtyFlags & StateDirtyFlags_t::Uniforms) != StateDirtyFlags_t::None)
+	if ((m_StateDirtyFlags & StateDirtyFlags_t::Uniforms) !=
+		StateDirtyFlags_t::None)
 	{
 		ApplyVertexConstants(m_PipelineState.m_hShaderProgram);
 		ApplyFragmentConstants(m_PipelineState.m_hShaderProgram);
@@ -385,7 +399,8 @@ FrustumVisibility_t::Enum CRenderer::GetAABBFrustumVisibility(
 			extent.m_X * CMaths::Abs(pPlanes[i].m_Normal.m_X) +
 			extent.m_Y * CMaths::Abs(pPlanes[i].m_Normal.m_Y) +
 			extent.m_Z * CMaths::Abs(pPlanes[i].m_Normal.m_Z);
-		const float32 distance = pPlanes[i].m_Normal.Dot(center) + pPlanes[i].m_Distance;
+		const float32 distance =
+			pPlanes[i].m_Normal.Dot(center) + pPlanes[i].m_Distance;
 
 		if (distance + r < 0.0f) return FrustumVisibility_t::Outside;
 		if (distance - r < 0.0f) frustumVisibility = FrustumVisibility_t::Partial;
