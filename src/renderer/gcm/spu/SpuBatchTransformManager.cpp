@@ -320,7 +320,7 @@ SPUResult_t::Enum CSpuBatchTransformManager::BeginBatch(
 		return SPUResult_t::Error;
 	}
 	
-	if (((uintptr_t)pSrcVertices % 16) != 0)
+	if ((reinterpret_cast<uintptr_t>(pSrcVertices) % 16) != 0)
 	{
 		AssertMsg(
 			0,
@@ -329,7 +329,7 @@ SPUResult_t::Enum CSpuBatchTransformManager::BeginBatch(
 		return SPUResult_t::Error;
 	}
 
-	if (((uintptr_t)pDstVertices % 16) != 0)
+	if ((reinterpret_cast<uintptr_t>(pDstVertices) % 16) != 0)
 	{
 		AssertMsg(
 			0,
@@ -347,7 +347,8 @@ SPUResult_t::Enum CSpuBatchTransformManager::BeginBatch(
 			continue;
 		}
 
-		uint32 chunkBatches = (batchCount + (s_BatchTransformSpuCount - 1 - i)) / s_BatchTransformSpuCount;
+		uint32 chunkBatches =
+			(batchCount + (s_BatchTransformSpuCount - 1 - i)) / s_BatchTransformSpuCount;
 		if (chunkBatches == 0)
 		{
 			continue;
@@ -357,11 +358,11 @@ SPUResult_t::Enum CSpuBatchTransformManager::BeginBatch(
 		
 		SpuBatchTransformJob_t& spuBatchTransformJob = *m_pBatchJobs[i];
 		spuBatchTransformJob.m_SrcVerticesEffAddr = CSpuUtils::PtrToEa(
-			(void*)pSrcVertices);
+			pSrcVertices);
 		spuBatchTransformJob.m_SrcIndicesEffAddr = CSpuUtils::PtrToEa(
-			(void*)pSrcIndices);
+			pSrcIndices);
 		spuBatchTransformJob.m_TransformsEffAddr = CSpuUtils::PtrToEa(
-			(void*)(pTransforms + batchIndex));
+			pTransforms + batchIndex);
 		spuBatchTransformJob.m_DstVerticesEffAddr = CSpuUtils::PtrToEa(
 			pDstVertices + offset);
 		spuBatchTransformJob.m_DstIndicesEffAddr = CSpuUtils::PtrToEa(

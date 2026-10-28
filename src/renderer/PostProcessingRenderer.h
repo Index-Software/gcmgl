@@ -26,7 +26,9 @@ public:
 	virtual void ShutdownPostProcessing() = 0;
 };
 
-class CPostProcessingRenderer : public virtual CRenderer, public IPostProcessingRenderer
+class CPostProcessingRenderer :
+	public virtual CRenderer,
+	public IPostProcessingRenderer
 {
 public:
 	CPostProcessingRenderer()

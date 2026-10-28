@@ -8,7 +8,7 @@
 
 #include "BatchRenderer.h"
 #include "mathsfury/Maths.h"
-#include <cstring>
+#include <string.h>
 
 bool CBatchRenderer::ShouldUpdateChunk(
 	float32 distanceToCamera,
@@ -29,14 +29,17 @@ void CBatchRenderer::FrustumCullBatch(
 	CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
 	bool isPerInstanceCull)
 {
-	for (int32 chunkIndex = 0; chunkIndex < batch.m_BatchChunks.Count(); chunkIndex++)
+	for (int32 chunkIndex = 0;
+		chunkIndex < batch.m_BatchChunks.Count();
+		chunkIndex++)
 	{
 		const BatchChunk_t& batchChunk = batch.m_BatchChunks[chunkIndex];
 
 		if (batch.m_pCameraPos)
 		{
 			static const float32 s_ChunkCullRadius = 20000.0f;
-			static const float32 s_ChunkCullRadiusSq = s_ChunkCullRadius * s_ChunkCullRadius;
+			static const float32 s_ChunkCullRadiusSq =
+				s_ChunkCullRadius * s_ChunkCullRadius;
 			const CVector3 chunkOffset = batchChunk.m_Center - *batch.m_pCameraPos;
 			if (chunkOffset.LengthSq() > s_ChunkCullRadiusSq)
 			{
@@ -54,7 +57,8 @@ void CBatchRenderer::FrustumCullBatch(
 			continue;
 		}
 
-		const int32 batchChunkTransformCount = batchChunk.m_BatchChunkTransforms.Count();
+		const int32 batchChunkTransformCount =
+			batchChunk.m_BatchChunkTransforms.Count();
 
 		if (frustumVisibility == FrustumVisibility_t::Inside || !isPerInstanceCull)
 		{
@@ -92,7 +96,8 @@ void CBatchRenderer::CullChunk(
 {
 	for (uint32 instanceIndex = start; instanceIndex < end; instanceIndex++)
 	{
-		const BatchChunkTransform_t& batchChunkTransform = pSrcTransforms[instanceIndex];
+		const BatchChunkTransform_t& batchChunkTransform =
+			pSrcTransforms[instanceIndex];
 		bool isVisible = true;
 
 		for (int32 i = 0; i < 6; i++)
@@ -132,14 +137,14 @@ void CBatchRenderer::DrawBatched(
 
 	if (m_PipelineState.m_hVertexBuffer == 0)
 	{
-		Warning("[Renderer] Invalid vertex buffer bound\n");
+		Warning("[CBatchRenderer] Invalid vertex buffer bound\n");
 
 		return;
 	}
 
 	if (m_PipelineState.m_pVertexLayout == GCMGL_NULL)
 	{
-		Warning("[Renderer] Invalid vertex layout bound\n");
+		Warning("[CBatchRenderer] Invalid vertex layout bound\n");
 
 		return;
 	}
@@ -184,21 +189,21 @@ void CBatchRenderer::DrawIndexedBatched(
 
 	if (m_PipelineState.m_hVertexBuffer == 0)
 	{
-		Warning("[Renderer] Invalid vertex buffer bound\n");
+		Warning("[CBatchRenderer] Invalid vertex buffer bound\n");
 
 		return;
 	}
 
 	if (m_PipelineState.m_hIndexBuffer == 0)
 	{
-		Warning("[Renderer] Invalid index buffer bound\n");
+		Warning("[CBatchRenderer] Invalid index buffer bound\n");
 
 		return;
 	}
 
 	if (m_PipelineState.m_pVertexLayout == GCMGL_NULL)
 	{
-		Warning("[Renderer] Invalid vertex layout bound\n");
+		Warning("[CBatchRenderer] Invalid vertex layout bound\n");
 
 		return;
 	}
@@ -218,7 +223,8 @@ void CBatchRenderer::DrawIndexedBatched(
 	if (m_BatchChunkTransformsScratch.Count() == 0) return;
 
 	const uint32 vertexStride = m_PipelineState.m_pVertexLayout->GetStride();
-	const uint32 bytesPerInstance = (vertexCount * vertexStride) + (indexCount * sizeof(uint32));
+	const uint32 bytesPerInstance =
+		(vertexCount * vertexStride) + (indexCount * sizeof(uint32));
 	const uint32 maxPerSubmit = CMaths::Max(
 		1u,
 		uint32(s_DrawChunkSize / bytesPerInstance));

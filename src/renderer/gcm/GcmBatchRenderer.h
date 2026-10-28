@@ -23,7 +23,7 @@ public:
 #ifdef PS3_SPU_ENABLED
 	virtual void EndFrame() GCMGL_OVERRIDE;
 	virtual void Shutdown() GCMGL_OVERRIDE;
-#endif
+#endif // PS3_SPU_ENABLED
 
 	virtual void DrawBatched(
 		uint32 vertexCount,

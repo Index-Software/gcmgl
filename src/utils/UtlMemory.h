@@ -56,9 +56,9 @@ public:
 		return _aligned_malloc(
 			static_cast<size_t>(size),
 			static_cast<size_t>(alignment));
-#else // PLATFORM_PS3 || PLATFORM_LINUX || _WIN32
+#else // !PLATFORM_PS3 && !PLATFORM_LINUX && !_WIN32
 		return memalign(alignment, uint32(size));
-#endif // PLATFORM_PS3 || _WIN32
+#endif // !PLATFORM_PS3 && !PLATFORM_LINUX && !_WIN32
 	}
 
 	/**

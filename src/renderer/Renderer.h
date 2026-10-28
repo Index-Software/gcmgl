@@ -390,7 +390,9 @@ public:
 			{
 				for (int32 x = 0; x < numChunksX; x++)
 				{
-					BatchChunk_t& batchChunk = m_BatchChunks[y * numChunksX * numChunksZ + z * numChunksX + x];
+					BatchChunk_t& batchChunk =
+						m_BatchChunks[
+							y * numChunksX * numChunksZ + z * numChunksX + x];
 					batchChunk.m_Center = CVector3(
 						minBounds.m_X + (x + 0.5f) * chunkSize,
 						minBounds.m_Y + (y + 0.5f) * chunkSize,
@@ -413,8 +415,10 @@ public:
 				int32((position.m_Y - minBounds.m_Y) / chunkSize)));
 			const int32 z = CMaths::Max(0, CMaths::Min(numChunksZ - 1,
 				int32((position.m_Z - minBounds.m_Z) / chunkSize)));
-			m_BatchChunks[y * numChunksX * numChunksZ + z * numChunksX + x].m_BatchChunkTransforms.AddToTail(
-				m_BatchChunkTransforms[i]);
+			m_BatchChunks[
+				y * numChunksX * numChunksZ + z * numChunksX + x]
+					.m_BatchChunkTransforms.AddToTail(
+						m_BatchChunkTransforms[i]);
 		}
 		m_BatchChunkTransforms.RemoveAll();
 	}
@@ -770,7 +774,8 @@ protected:
 	PipelineState_t m_PipelineState;
 	CUtlMap<CFixedString, ShaderProgramHandle> m_ShaderCache;
 	CUtlMap<UniformBlockLayoutHandle, UniformBlockLayout_t> m_UniformBlockLayouts;
-	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, UniformBlockLayoutHandle> > m_UniformLayoutCache;
+	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, UniformBlockLayoutHandle> >
+		m_UniformLayoutCache;
 	StateDirtyFlags_t::Enum m_StateDirtyFlags;
 	uint32 m_NextHandle;
 };

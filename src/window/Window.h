@@ -16,16 +16,16 @@
 
 struct WindowConfig_t
 {
+	CFixedString m_Title;
 	int32 m_Width;
 	int32 m_Height;
 	float32 m_AspectRatio;
-	CFixedString m_Title;
 
 	WindowConfig_t() :
+		m_Title("gcmgl"),
 		m_Width(1280),
 		m_Height(720),
-		m_AspectRatio(float32(m_Width) / float32(m_Height)),
-		m_Title("gcmgl")
+		m_AspectRatio(float32(m_Width) / float32(m_Height))
 	{
 	}
 };

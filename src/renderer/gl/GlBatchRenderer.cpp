@@ -77,10 +77,14 @@ static void TransformVertices(
 static void* BatchTransforms(void* pArg)
 {
 	BatchThreadData_t* pBatchThreadData = static_cast<BatchThreadData_t*>(pArg);
-	for (uint32 i = pBatchThreadData->m_ThreadStart; i < pBatchThreadData->m_ThreadEnd; i++)
+	for (uint32 i = pBatchThreadData->m_ThreadStart;
+		i < pBatchThreadData->m_ThreadEnd;
+		i++)
 	{
 		const uint32 dstIndex = i - pBatchThreadData->m_ChunkStart;
-		char* pDstVertexData = pBatchThreadData->m_pDstVertexData + uint64(dstIndex) * pBatchThreadData->m_VertexCount * pBatchThreadData->m_VertexLayoutStride;
+		char* pDstVertexData = pBatchThreadData->m_pDstVertexData +
+			uint64(dstIndex) * pBatchThreadData->m_VertexCount *
+				pBatchThreadData->m_VertexLayoutStride;
 		memcpy(
 			pDstVertexData,
 			pBatchThreadData->m_pSrcVertexData,
@@ -106,9 +110,12 @@ static void* FrustumCullThreadSSE(void* pArg)
 {
 	CullThreadData_t* pData = static_cast<CullThreadData_t*>(pArg);
 
-	for (uint32 instanceIndex = pData->m_Start; instanceIndex < pData->m_End; instanceIndex++)
+	for (uint32 instanceIndex = pData->m_Start;
+		instanceIndex < pData->m_End;
+		instanceIndex++)
 	{
-		const BatchChunkTransform_t& batchChunkTransform = pData->m_pSrcTransforms[instanceIndex];
+		const BatchChunkTransform_t& batchChunkTransform =
+			pData->m_pSrcTransforms[instanceIndex];
 
 		const simde__m128 center = simde_mm_set_ps(
 			1.0f,
@@ -179,14 +186,17 @@ void CGlBatchRenderer::FrustumCullBatch(
 	CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
 	bool isPerInstanceCull)
 {
-	for (int32 chunkIndex = 0; chunkIndex < batch.m_BatchChunks.Count(); chunkIndex++)
+	for (int32 chunkIndex = 0;
+		chunkIndex < batch.m_BatchChunks.Count();
+		chunkIndex++)
 	{
 		const BatchChunk_t& batchChunk = batch.m_BatchChunks[chunkIndex];
 
 		if (batch.m_pCameraPos)
 		{
 			static const float32 s_ChunkCullRadius = 20000.0f;
-			static const float32 s_ChunkCullRadiusSq = s_ChunkCullRadius * s_ChunkCullRadius;
+			static const float32 s_ChunkCullRadiusSq =
+				s_ChunkCullRadius * s_ChunkCullRadius;
 			const CVector3 chunkOffset = batchChunk.m_Center - *batch.m_pCameraPos;
 			if (chunkOffset.LengthSq() > s_ChunkCullRadiusSq)
 			{
@@ -194,7 +204,8 @@ void CGlBatchRenderer::FrustumCullBatch(
 			}
 		}
 
-		const int32 batchChunkTransformCount = batchChunk.m_BatchChunkTransforms.Count();
+		const int32 batchChunkTransformCount =
+			batchChunk.m_BatchChunkTransforms.Count();
 
 		const FrustumVisibility_t::Enum frustumVisibility = GetAABBFrustumVisibility(
 			batchChunk.m_Center,
@@ -248,7 +259,7 @@ void CGlBatchRenderer::FrustumCullBatch(
 				if (threadCreateResult != 0)
 				{
 					Warning(
-						"[GlBatchRenderer] Failed to create thread %d: %d\n",
+						"[CGlBatchRenderer] Failed to create thread %d: %d\n",
 						j,
 						threadCreateResult);
 				}
@@ -275,7 +286,9 @@ void CGlBatchRenderer::FrustumCullBatch(
 #endif // THREADING_ENABLED
 
 #ifdef SIMD_ENABLED
-		for (int32 instanceIndex = 0; instanceIndex < batchChunkTransformCount; instanceIndex++)
+		for (int32 instanceIndex = 0;
+			instanceIndex < batchChunkTransformCount;
+			instanceIndex++)
 		{
 			const BatchChunkTransform_t& transform =
 				batchChunk.m_BatchChunkTransforms[instanceIndex];
@@ -345,7 +358,9 @@ void CGlBatchRenderer::DrawBatchedChunk(
 	const CVertexLayout* pVertexLayout = m_PipelineState.m_pVertexLayout;
 	const char* pSrcVertexData = reinterpret_cast<const char*>(
 		m_BufferResources.Element(
-			m_BufferResources.Find(m_PipelineState.m_hVertexBuffer)).m_pPtr) + (uint64(startVertex) * pVertexLayout->GetStride());
+			m_BufferResources.Find(
+				m_PipelineState.m_hVertexBuffer)).m_pPtr) +
+		(uint64(startVertex) * pVertexLayout->GetStride());
 	uint32 vertexStride = pVertexLayout->GetStride();
 	uint32 totalVertices = vertexCount * chunkSize;
 	uint32 totalVertexDataSize = totalVertices * vertexStride;
@@ -420,7 +435,7 @@ void CGlBatchRenderer::DrawBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[GlBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGlBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
@@ -436,7 +451,8 @@ void CGlBatchRenderer::DrawBatchedChunk(
 	{
 		for (uint32 i = 0; i < chunkSize; i++)
 		{
-			char* pBatchVertexDst = pDstVertexData + uint64(i) * vertexCount * vertexStride;
+			char* pBatchVertexDst =
+				pDstVertexData + uint64(i) * vertexCount * vertexStride;
 			memcpy(
 				pBatchVertexDst,
 				pSrcVertexData,
@@ -497,11 +513,16 @@ void CGlBatchRenderer::DrawBatchedChunk(
 static void* BatchIndexedTransforms(void* pArg)
 {
 	BatchThreadData_t* pBatchThreadData = static_cast<BatchThreadData_t*>(pArg);
-	for (uint32 i = pBatchThreadData->m_ThreadStart; i < pBatchThreadData->m_ThreadEnd; i++)
+	for (uint32 i = pBatchThreadData->m_ThreadStart;
+		i < pBatchThreadData->m_ThreadEnd;
+		i++)
 	{
 		const uint32 dstIndex = i - pBatchThreadData->m_ChunkStart;
-		char* pDstVertexData = pBatchThreadData->m_pDstVertexData + uint64(dstIndex) * pBatchThreadData->m_VertexCount * pBatchThreadData->m_VertexLayoutStride;
-		uint32* pDstIndexData = pBatchThreadData->m_pDstIndexData + uint64(dstIndex) * pBatchThreadData->m_IndexCount;
+		char* pDstVertexData = pBatchThreadData->m_pDstVertexData +
+			uint64(dstIndex) * pBatchThreadData->m_VertexCount *
+				pBatchThreadData->m_VertexLayoutStride;
+		uint32* pDstIndexData = pBatchThreadData->m_pDstIndexData +
+			uint64(dstIndex) * pBatchThreadData->m_IndexCount;
 		const uint32 vertexBase = dstIndex * pBatchThreadData->m_VertexCount;
 
 		memcpy(
@@ -552,10 +573,13 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 	uint32 totalIndices = indexCount * chunkSize;
 	const uint64 totalVertexDataSize = uint64(totalVertices) * vertexStride;
 	const uint64 totalIndexDataSize = uint64(totalIndices) * sizeof(uint32);
-	int32 vertexBufferIndex = m_BufferResources.Find(m_PipelineState.m_hVertexBuffer);
-	int32 indexBufferIndex = m_BufferResources.Find(m_PipelineState.m_hIndexBuffer);
+	int32 vertexBufferIndex =
+		m_BufferResources.Find(m_PipelineState.m_hVertexBuffer);
+	int32 indexBufferIndex =
+		m_BufferResources.Find(m_PipelineState.m_hIndexBuffer);
 
-	if (vertexBufferIndex == m_BufferResources.InvalidIndex() || indexBufferIndex == m_BufferResources.InvalidIndex())
+	if (vertexBufferIndex == m_BufferResources.InvalidIndex() ||
+		indexBufferIndex == m_BufferResources.InvalidIndex())
 	{
 		return;
 	}
@@ -651,7 +675,7 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[GlBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGlBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
@@ -667,7 +691,8 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 	{
 		for (uint32 i = 0; i < chunkSize; i++)
 		{
-			char* pBatchVertexDst = pDstVertexData + uint64(i) * vertexCount * vertexStride;
+			char* pBatchVertexDst =
+				pDstVertexData + uint64(i) * vertexCount * vertexStride;
 			uint32* pBatchIndexDst = pDstIndexData + uint64(i) * indexCount;
 			memcpy(
 				pBatchVertexDst,

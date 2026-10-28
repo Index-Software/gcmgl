@@ -36,7 +36,8 @@
 
 static const int32 s_ChunkSize = 1000;
 static const int32 s_MaxInstances = 50000;
-static const int32 s_MaxChunks = (s_MaxInstances + s_ChunkSize - 1) / s_ChunkSize;
+static const int32 s_MaxChunks =
+	(s_MaxInstances + s_ChunkSize - 1) / s_ChunkSize;
 
 struct InstanceChunk_t
 {
@@ -75,7 +76,8 @@ int32 RunBatchInstancedExample(
 	if (hShaderProgram == 0)
 	{
 		Error(
-			"[BatchInstanced] Failed to create shader program 'ExampleRainbowInstanced'\n");
+			"[BatchInstanced] Failed to create shader program "
+				"'ExampleRainbowInstanced'\n");
 
 		return 1;
 	}
@@ -158,8 +160,8 @@ int32 RunBatchInstancedExample(
 	viewProjectionLayout.m_UniformNames.AddToTail("ViewProjection");
 	viewProjectionLayout.m_Binding = 0;
 	viewProjectionLayout.m_Size = sizeof(CMatrix4);
-	UniformBlockLayoutHandle hViewProjectionLayout = pRenderer->CreateUniformBlockLayout(
-		viewProjectionLayout);
+	UniformBlockLayoutHandle hViewProjectionLayout =
+		pRenderer->CreateUniformBlockLayout(viewProjectionLayout);
 
 	// Create uniform layout for time parameters
 	UniformBlockLayout_t timeLayout;

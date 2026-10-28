@@ -18,7 +18,7 @@ CFixedString CUtils::ReadFile(const CFixedString& path)
 	{
 		fullPath = "/dev_hdd0/game/GCGL00001/USRDIR/" + fullPath;
 	}
-#endif
+#endif // PLATFORM_PS3
 
 	CUtlVector<uint8> bytes = ReadBinaryFile(fullPath);
 	if (bytes.Count() > 0)
@@ -44,7 +44,7 @@ CUtlVector<uint8> CUtils::ReadBinaryFile(const CFixedString& path)
 	{
 		fullPath = "/dev_hdd0/game/GCGL00001/USRDIR/" + fullPath;
 	}
-#endif
+#endif // PLATFORM_PS3
 
 	FILE* pFile = fopen(fullPath.c_str(), "rb");
 	if (!pFile)

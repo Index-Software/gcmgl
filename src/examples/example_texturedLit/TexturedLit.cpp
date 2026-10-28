@@ -270,7 +270,7 @@ int32 RunTexturedLitExample(
 		finalWidth = texWidth;
 		finalHeight = texHeight;
 
-		Msg("[TexturedLit] Loaded texture: %dx%d\n", texWidth, texHeight);
+		Msg("Loaded texture: %dx%d\n", texWidth, texHeight);
 	}
 	else
 	{

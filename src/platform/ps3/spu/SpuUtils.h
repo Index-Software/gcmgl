@@ -16,7 +16,7 @@
 class CSpuUtils
 {
 public:
-	static INLINE uint64 PtrToEa(void* pPtr)
+	static INLINE uint64 PtrToEa(const void* pPtr)
 	{
 		return static_cast<uint64>(reinterpret_cast<uintptr_t>(pPtr));
 	}

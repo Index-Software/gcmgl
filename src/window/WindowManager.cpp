@@ -30,14 +30,14 @@ bool CWindowManager::Start(
 	m_pWindow = CreateWindowInstance();
 	if (m_pWindow == GCMGL_NULL)
 	{
-		Error("[WindowManager] Failed to create window instance\n");
+		Error("[CWindowManager] Failed to create window instance\n");
 		
 		return false;
 	}
 
 	if (!m_pWindow->Init(windowConfig))
 	{
-		Error("[WindowManager] Failed to initialize window\n");
+		Error("[CWindowManager] Failed to initialize window\n");
 		DestroyWindowInstance(m_pWindow);
 		m_pWindow = GCMGL_NULL;
 

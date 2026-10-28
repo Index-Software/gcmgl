@@ -75,9 +75,12 @@ static void FrustumCullThreadVMX(void* pArg)
 
 	const vector float zero = (vector float){ 0.0f, 0.0f, 0.0f, 0.0f };
 
-	for (uint32 instanceIndex = pData->m_Start; instanceIndex < pData->m_End; instanceIndex++)
+	for (uint32 instanceIndex = pData->m_Start;
+		instanceIndex < pData->m_End;
+		instanceIndex++)
 	{
-		const BatchChunkTransform_t& batchChunkTransform = pData->m_pSrcTransforms[instanceIndex];
+		const BatchChunkTransform_t& batchChunkTransform =
+			pData->m_pSrcTransforms[instanceIndex];
 
 		const vector float center = (vector float){
 			batchChunkTransform.m_Position.m_X,
@@ -261,17 +264,24 @@ static void TransformVertices(
 static void BatchTransformsThread(void* pArg)
 {
 	BatchThreadData_t* pBatchThreadData = static_cast<BatchThreadData_t*>(pArg);
-	for (uint32 i = pBatchThreadData->m_ThreadStart; i < pBatchThreadData->m_ThreadEnd; i++)
+	for (uint32 i = pBatchThreadData->m_ThreadStart;
+		i < pBatchThreadData->m_ThreadEnd;
+		i++)
 	{
-		char* pDst = pBatchThreadData->m_pDstVertexData + (uint64(i) * pBatchThreadData->m_VertexCount * pBatchThreadData->m_VertexLayoutStride);
+		char* pDst = pBatchThreadData->m_pDstVertexData +
+			(uint64(i) * pBatchThreadData->m_VertexCount *
+				pBatchThreadData->m_VertexLayoutStride);
 		memcpy(
 			pDst,
 			pBatchThreadData->m_pSrcVertexData,
-			uint64(pBatchThreadData->m_VertexCount) * pBatchThreadData->m_VertexLayoutStride);
+			uint64(pBatchThreadData->m_VertexCount) *
+				pBatchThreadData->m_VertexLayoutStride);
 
 		if (pBatchThreadData->m_HasVertexPos)
 		{
-			CMatrix4 batchChunkTransformMatrix = (*pBatchThreadData->m_pBatchChunkTransforms)[pBatchThreadData->m_ChunkStart + i].ToMatrix();
+			CMatrix4 batchChunkTransformMatrix =
+				(*pBatchThreadData->m_pBatchChunkTransforms)[
+					pBatchThreadData->m_ChunkStart + i].ToMatrix();
 			TransformVertices(
 				pDst,
 				pBatchThreadData->m_VertexCount,
@@ -294,14 +304,17 @@ void CGcmBatchRenderer::FrustumCullBatch(
 #ifdef GCMGL_DIAGNOSTICS
 	const uint64 cullStart = PerfTimer_Now();
 #endif // GCMGL_DIAGNOSTICS
-	for (int32 chunkIndex = 0; chunkIndex < batch.m_BatchChunks.Count(); chunkIndex++)
+	for (int32 chunkIndex = 0;
+		chunkIndex < batch.m_BatchChunks.Count();
+		chunkIndex++)
 	{
 		const BatchChunk_t& batchChunk = batch.m_BatchChunks[chunkIndex];
 
 		if (batch.m_pCameraPos)
 		{
 			static const float32 s_ChunkCullRadius = 20000.0f;
-			static const float32 s_ChunkCullRadiusSq = s_ChunkCullRadius * s_ChunkCullRadius;
+			static const float32 s_ChunkCullRadiusSq =
+				s_ChunkCullRadius * s_ChunkCullRadius;
 			const CVector3 chunkOffset = batchChunk.m_Center - *batch.m_pCameraPos;
 			if (chunkOffset.LengthSq() > s_ChunkCullRadiusSq)
 			{
@@ -309,7 +322,8 @@ void CGcmBatchRenderer::FrustumCullBatch(
 			}
 		}
 
-		const int32 batchChunkTransformCount = batchChunk.m_BatchChunkTransforms.Count();
+		const int32 batchChunkTransformCount =
+			batchChunk.m_BatchChunkTransforms.Count();
 
 		const FrustumVisibility_t::Enum frustumVisibility = GetAABBFrustumVisibility(
 			batchChunk.m_Center,
@@ -368,7 +382,7 @@ void CGcmBatchRenderer::FrustumCullBatch(
 				if (threadCreateResult != 0)
 				{
 					Warning(
-						"[GcmBatchRenderer] Failed to create cull thread %d: %d\n",
+						"[CGcmBatchRenderer] Failed to create cull thread %d: %d\n",
 						j,
 						threadCreateResult);
 				}
@@ -517,7 +531,9 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 	const CVertexLayout* pVertexLayout = m_PipelineState.m_pVertexLayout;
 	const char* pSrcVertexData = reinterpret_cast<const char*>(
 		m_BufferResources.Element(
-			m_BufferResources.Find(m_PipelineState.m_hVertexBuffer)).m_pPtr) + (uint64(startVertex) * pVertexLayout->GetStride());
+			m_BufferResources.Find(
+				m_PipelineState.m_hVertexBuffer)).m_pPtr) +
+		(uint64(startVertex) * pVertexLayout->GetStride());
 	uint32 vertexStride = pVertexLayout->GetStride();
 	uint32 totalVertices = vertexCount * chunkSize;
 	uint32 alignedVertexSize = ((totalVertices * vertexStride) + 127) & ~127;
@@ -540,7 +556,7 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 		if (!stagingVertexBuffer.m_pPtr)
 		{
 			Warning(
-				"[GcmBatchRenderer] Staging heap out of memory for vertex buffer\n");
+				"[CGcmBatchRenderer] Staging heap out of memory for vertex buffer\n");
 
 			return;
 		}
@@ -594,7 +610,9 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 				uint64(vertexCount) * vertexStride);
 		}
 #ifdef GCMGL_DIAGNOSTICS
-		CNetPerfReporter::Add("spu_fallback_memcpy_us", PerfTimer_Now() - ppuMemcpyStart);
+		CNetPerfReporter::Add(
+			"spu_fallback_memcpy_us",
+			PerfTimer_Now() - ppuMemcpyStart);
 #endif // GCMGL_DIAGNOSTICS
 	}
 #else // PS3_SPU_ENABLED && GCMGL_SPU_BATCH_TRANSFORM_ENABLED
@@ -638,7 +656,7 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[GcmBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGcmBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
@@ -670,7 +688,8 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 #endif // GCMGL_DIAGNOSTICS
 		for (uint32 i = 0; i < chunkSize; i++)
 		{
-			char* pChunkVertexDst = pDstVertexData + uint64(i) * vertexCount * vertexStride;
+			char* pChunkVertexDst =
+				pDstVertexData + uint64(i) * vertexCount * vertexStride;
 			memcpy(
 				pChunkVertexDst,
 				pSrcVertexData,
@@ -739,21 +758,27 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 static void BatchIndexedTransformsThread(void* pArg)
 {
 	BatchThreadData_t* pBatchThreadData = static_cast<BatchThreadData_t*>(pArg);
-	for (uint32 i = pBatchThreadData->m_ThreadStart; i < pBatchThreadData->m_ThreadEnd; i++)
+	for (uint32 i = pBatchThreadData->m_ThreadStart;
+		i < pBatchThreadData->m_ThreadEnd;
+		i++)
 	{
 		char* pVertexDst = pBatchThreadData->m_pDstVertexData +
-			(uint64(i) * pBatchThreadData->m_VertexCount * pBatchThreadData->m_VertexLayoutStride);
+			(uint64(i) * pBatchThreadData->m_VertexCount *
+				pBatchThreadData->m_VertexLayoutStride);
 		uint32* pIndexDst = pBatchThreadData->m_pDstIndexData +
 			(uint64(i) * pBatchThreadData->m_IndexCount);
 
 		memcpy(
 			pVertexDst,
 			pBatchThreadData->m_pSrcVertexData,
-			uint64(pBatchThreadData->m_VertexCount) * pBatchThreadData->m_VertexLayoutStride);
+			uint64(pBatchThreadData->m_VertexCount) *
+				pBatchThreadData->m_VertexLayoutStride);
 
 		if (pBatchThreadData->m_HasVertexPos)
 		{
-			CMatrix4 batchChunkTransformMatrix = (*pBatchThreadData->m_pBatchChunkTransforms)[pBatchThreadData->m_ChunkStart + i].ToMatrix();
+			CMatrix4 batchChunkTransformMatrix =
+				(*pBatchThreadData->m_pBatchChunkTransforms)[
+					pBatchThreadData->m_ChunkStart + i].ToMatrix();
 			TransformVertices(
 				pVertexDst,
 				pBatchThreadData->m_VertexCount,
@@ -795,11 +820,15 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 	uint32 totalVertices = vertexCount * chunkSize;
 	uint32 totalIndices = indexCount * chunkSize;
 	uint32 alignedVertexSize = ((totalVertices * vertexStride) + 127) & ~127;
-	uint32 alignedIndexSize = ((totalIndices * uint32(sizeof(uint32))) + 127) & ~127;
-	int32 vertexBufferIndex = m_BufferResources.Find(m_PipelineState.m_hVertexBuffer);
-	int32 indexBufferIndex = m_BufferResources.Find(m_PipelineState.m_hIndexBuffer);
+	uint32 alignedIndexSize =
+		((totalIndices * uint32(sizeof(uint32))) + 127) & ~127;
+	int32 vertexBufferIndex =
+		m_BufferResources.Find(m_PipelineState.m_hVertexBuffer);
+	int32 indexBufferIndex =
+		m_BufferResources.Find(m_PipelineState.m_hIndexBuffer);
 
-	if (vertexBufferIndex == m_BufferResources.InvalidIndex() || indexBufferIndex == m_BufferResources.InvalidIndex())
+	if (vertexBufferIndex == m_BufferResources.InvalidIndex() ||
+		indexBufferIndex == m_BufferResources.InvalidIndex())
 	{
 		return;
 	}
@@ -819,7 +848,7 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 		if (!stagingVertexBuffer.m_pPtr)
 		{
 			Warning(
-				"[GcmBatchRenderer] Staging heap out of memory for vertex buffer\n");
+				"[CGcmBatchRenderer] Staging heap out of memory for vertex buffer\n");
 
 			return;
 		}
@@ -846,7 +875,7 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 		if (!stagingIndexBuffer.m_pPtr)
 		{
 			Warning(
-				"[GcmBatchRenderer] Staging heap out of memory for index buffer\n");
+				"[CGcmBatchRenderer] Staging heap out of memory for index buffer\n");
 
 			return;
 		}
@@ -883,7 +912,9 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 			vertexPosOffset,
 			baseVertex);
 #ifdef GCMGL_DIAGNOSTICS
-		CNetPerfReporter::Add("spu_transform_begin_us", PerfTimer_Now() - spuBeginStart);
+		CNetPerfReporter::Add(
+			"spu_transform_begin_us",
+			PerfTimer_Now() - spuBeginStart);
 #endif // GCMGL_DIAGNOSTICS
 	}
 	else
@@ -900,11 +931,14 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 
 			for (uint32 j = 0; j < indexCount; j++)
 			{
-				pDstIndexData[i * indexCount + j] = pSrcIndices[j] + uint32(baseVertex + int32(i * vertexCount));
+				pDstIndexData[i * indexCount + j] =
+					pSrcIndices[j] + uint32(baseVertex + int32(i * vertexCount));
 			}
 		}
 #ifdef GCMGL_DIAGNOSTICS
-		CNetPerfReporter::Add("spu_fallback_memcpy_us", PerfTimer_Now() - ppuMemcpyStart);
+		CNetPerfReporter::Add(
+			"spu_fallback_memcpy_us",
+			PerfTimer_Now() - ppuMemcpyStart);
 #endif // GCMGL_DIAGNOSTICS
 	}
 #else // PS3_SPU_ENABLED && GCMGL_SPU_BATCH_TRANSFORM_ENABLED
@@ -948,7 +982,7 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[GcmBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGcmBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
@@ -978,7 +1012,8 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 #endif // GCMGL_DIAGNOSTICS
 		for (uint32 i = 0; i < chunkSize; i++)
 		{
-			char* pBatchVertexDst = pDstVertexData + uint64(i) * vertexCount * vertexStride;
+			char* pBatchVertexDst =
+				pDstVertexData + uint64(i) * vertexCount * vertexStride;
 			uint32* pBatchIndexDst = pDstIndexData + uint64(i) * indexCount;
 			memcpy(
 				pBatchVertexDst,

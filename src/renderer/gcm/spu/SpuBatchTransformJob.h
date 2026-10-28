@@ -16,7 +16,7 @@
 #ifdef __cplusplus
 extern "C"
 {
-#endif
+#endif // __cplusplus
 
 #define SPU_BATCH_CMD_IDLE 0u
 #define SPU_BATCH_CMD_TRANSFORM 1u
@@ -48,10 +48,10 @@ struct SpuBatchTransformJob_t
 
 #ifndef __cplusplus
 typedef struct SpuBatchTransformJob_t SpuBatchTransformJob_t;
-#endif
+#endif // !__cplusplus
 
 #ifdef __cplusplus
 }
-#endif
+#endif // __cplusplus
 
 #endif // SPU_BATCH_TRANSFORM_JOB_H

@@ -59,7 +59,7 @@ void CWindowPs3::PollEvents()
 
 void CWindowPs3::MakeContextCurrent()
 {
-	Msg("[CWindowPs3] MakeContextCurrent() stub\n");
+	Msg("MakeContextCurrent() is a stub\n");
 }
 
 bool CWindowPs3::ShouldClose()
@@ -69,7 +69,7 @@ bool CWindowPs3::ShouldClose()
 
 void* CWindowPs3::GetNativeHandle()
 {
-	Msg("[CWindowPs3] GetNativeHandle() stub\n");
+	Msg("GetNativeHandle() is a stub\n");
 
 	return GCMGL_NULL;
 }
@@ -93,7 +93,7 @@ void CWindowPs3::SysutilExitCallback(
 {
 	CWindowPs3* pWindow = reinterpret_cast<CWindowPs3*>(pUserData);
 	Msg(
-		"[CWindowPs3] SysutilExitCallback triggered with status=0x%lx, param=0x%lx\n",
+		"SysutilExitCallback triggered with status=0x%lx, param=0x%lx\n",
 		status,
 		param);
 
@@ -101,7 +101,7 @@ void CWindowPs3::SysutilExitCallback(
 	{
 		case SYSUTIL_EXIT_GAME:
 		{
-			Msg("[CWindowPs3] SYSUTIL_EXIT_GAME status received\n");
+			Msg("SYSUTIL_EXIT_GAME status received\n");
 			if (pWindow != GCMGL_NULL)
 			{
 				pWindow->m_IsRunning = false;
@@ -111,13 +111,13 @@ void CWindowPs3::SysutilExitCallback(
 		}
 		case SYSUTIL_DRAW_BEGIN:
 		{
-			Msg("[CWindowPs3] SYSUTIL_DRAW_BEGIN received\n");
+			Msg("SYSUTIL_DRAW_BEGIN received\n");
 
 			break;
 		}
 		case SYSUTIL_DRAW_END:
 		{
-			Msg("[CWindowPs3] SYSUTIL_DRAW_END received\n");
+			Msg("SYSUTIL_DRAW_END received\n");
 
 			break;
 		}

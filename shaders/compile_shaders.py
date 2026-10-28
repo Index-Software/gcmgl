@@ -107,8 +107,13 @@ class ShaderCompiler:
         if not self._compile_slang():
             return False
 
-        cgcomp_path = shutil.which(CGCOMP_PATH)
-        if not cgcomp_path:
+        tools_cgcomp: Path = self._project_root / "tools" / "cgcomp" / "cgcomp"
+        if tools_cgcomp.is_file():
+            cgcomp_path: str = str(tools_cgcomp)
+        else:
+            cgcomp_path = shutil.which(CGCOMP_PATH)
+
+        if cgcomp_path is None:
             print("[ERROR] cgcomp not available.")
 
             return False

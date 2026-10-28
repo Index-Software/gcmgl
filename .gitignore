@@ -54,3 +54,4 @@ src/utils/DiagnosticsReporter.cpp
 src/utils/NetPerfReporter.h
 src/utils/NetPerfReporter.cpp
 src/utils/PerfTimer.h
+tools/cgcomp
