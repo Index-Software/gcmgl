@@ -36,7 +36,10 @@ CGcmRenderer::CGcmRenderer() :
 	m_pHostAddr(GCMGL_NULL),
 	m_HostSize(0),
 	m_StagingIndex(0),
-	m_InstanceBufferIndex(0)
+	m_InstanceBufferIndex(0),
+	m_hVertexConstantsProgram(0),
+	m_IsTextureCacheDirty(true),
+	m_IsVertexCacheDirty(true)
 {
 	memset(&m_PostProcessState, 0, sizeof(m_PostProcessState));
 }
@@ -63,6 +66,8 @@ bool CGcmRenderer::Init(const RendererDesc_t& rendererDesc)
 		m_HostSize,
 		rendererDesc.m_Width,
 		rendererDesc.m_Height);
+
+	gcmSetFlipMode(rendererDesc.m_IsVSync ? GCM_FLIP_VSYNC : GCM_FLIP_HSYNC);
 
 	rsxSetColorMask(
 		context,
@@ -265,11 +270,7 @@ void CGcmRenderer::Shutdown()
 			continue;
 		}
 
-		if (bufferResource.m_pPtr)
-		{
-			m_StaticHeap.Free(bufferResource.m_Alloc);
-			bufferResource.m_pPtr = GCMGL_NULL;
-		}
+		FreeBufferMemory(bufferResource);
 	}
 	m_BufferResources.RemoveAll();
 
@@ -311,6 +312,10 @@ void CGcmRenderer::BeginFrame()
 	m_StateDirtyFlags = StateDirtyFlags_t::All;
 	m_InstanceBufferIndex = 0;
 
+	// Invalidate once per frame to cover writes made between frames
+	m_IsTextureCacheDirty = true;
+	m_IsVertexCacheDirty = true;
+
 	SetEnvironment();
 
 	if (m_PostProcessState.m_pVertexProgram &&
@@ -339,6 +344,8 @@ void CGcmRenderer::EndFrame()
 	{
 		CGcmPostProcessingRenderer::End(m_PostProcessState);
 	}
+
+	m_hVertexConstantsProgram = 0;
 
 	flip();
 }
@@ -462,6 +469,8 @@ RenderTargetHandle CGcmRenderer::CreateRenderTarget(
 	TextureFormat_t::Enum colorFormat,
 	TextureFormat_t::Enum depthFormat)
 {
+	m_IsTextureCacheDirty = true;
+
 	uint32 colorPitch = (width * 4 + 63) & ~63;
 	RsxAllocation_t colorAlloc;
 	colorAlloc.m_pPtr = GCMGL_NULL;
@@ -617,6 +626,8 @@ RenderTargetHandle CGcmRenderer::CreateRenderTargetCube(
 	TextureFormat_t::Enum colorFormat,
 	TextureFormat_t::Enum depthFormat)
 {
+	m_IsTextureCacheDirty = true;
+
 	uint32 colorPitch = (size * 4 + 63) & ~63;
 	RsxAllocation_t colorAlloc;
 	colorAlloc.m_pPtr = GCMGL_NULL;
@@ -797,6 +808,10 @@ void CGcmRenderer::SetRenderTarget(
 	RenderTargetHandle hRenderTarget,
 	uint32 faceIndex)
 {
+	// The target rendered so far may be sampled from now on, so the texture
+	// cache must not serve its old contents
+	m_IsTextureCacheDirty = true;
+
 	if (hRenderTarget == 0)
 	{
 		if (m_PostProcessState.m_pVertexProgram &&
@@ -907,6 +922,8 @@ BufferHandle CGcmRenderer::CreateVertexBuffer(
 	uint64 size,
 	BufferUsage_t::Enum usage)
 {
+	m_IsVertexCacheDirty = true;
+
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
 	if (!rsxAllocation.m_pPtr)
 	{
@@ -949,6 +966,8 @@ BufferHandle CGcmRenderer::CreateIndexBuffer(
 	IndexFormat_t::Enum format,
 	BufferUsage_t::Enum usage)
 {
+	m_IsVertexCacheDirty = true;
+
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
 	if (!rsxAllocation.m_pPtr)
 	{
@@ -989,31 +1008,47 @@ BufferHandle CGcmRenderer::CreateConstantBuffer(
 	uint64 size,
 	BufferUsage_t::Enum usage)
 {
-	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
-	if (!rsxAllocation.m_pPtr)
+	void* pData = CUtlMemory::AlignedAlloc(size, 16);
+	if (!pData)
 	{
 		Error("[CGcmRenderer] Failed to allocate constant buffer memory\n");
 
 		return 0;
 	}
+	memset(pData, 0, size_t(size));
 
 	BufferHandle hBuffer = m_NextHandle++;
 	const BufferResource_t bufferResource = {
-		rsxAllocation.m_pPtr,
-		rsxAllocation.m_Offset,
+		pData,
+		0xffffffff,
 		uint32(size),
-		rsxAllocation
+		RsxAllocation_t()
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
 		Error("[CGcmRenderer] Buffer resource map is full\n");
 
-		m_StaticHeap.Free(rsxAllocation);
+		CUtlMemory::AlignedFree(pData);
 
 		return 0;
 	}
 
 	return hBuffer;
+}
+
+void CGcmRenderer::FreeBufferMemory(BufferResource_t& bufferResource)
+{
+	if (bufferResource.m_Alloc.m_pPtr)
+	{
+		m_StaticHeap.Free(bufferResource.m_Alloc);
+	}
+	else if (bufferResource.m_pPtr)
+	{
+		CUtlMemory::AlignedFree(bufferResource.m_pPtr);
+	}
+
+	bufferResource.m_pPtr = GCMGL_NULL;
+	bufferResource.m_Alloc = RsxAllocation_t();
 }
 
 void CGcmRenderer::UpdateBuffer(
@@ -1037,7 +1072,12 @@ void CGcmRenderer::UpdateBuffer(
 		pData,
 		updateSize);
 
-	__sync_synchronize();
+	if (bufferResource.m_Alloc.m_pPtr)
+	{
+		__sync_synchronize();
+
+		m_IsVertexCacheDirty = true;
+	}
 }
 
 void CGcmRenderer::DestroyBuffer(BufferHandle hBuffer)
@@ -1050,8 +1090,7 @@ void CGcmRenderer::DestroyBuffer(BufferHandle hBuffer)
 		return;
 	}
 
-	void* pPtr = m_BufferResources.Element(bufferIndex).m_pPtr;
-	if (pPtr) m_StaticHeap.Free(m_BufferResources.Element(bufferIndex).m_Alloc);
+	FreeBufferMemory(m_BufferResources.Element(bufferIndex));
 
 	m_BufferResources.Remove(hBuffer);
 
@@ -1075,6 +1114,8 @@ void* CGcmRenderer::MapBuffer(BufferHandle hBuffer)
 
 		return GCMGL_NULL;
 	}
+
+	m_IsVertexCacheDirty = true;
 
 	return m_BufferResources.Element(bufferIndex).m_pPtr;
 }
@@ -1234,6 +1275,8 @@ TextureHandle CGcmRenderer::CreateTexture2D(
 	TextureFormat_t::Enum format,
 	const void* pData)
 {
+	m_IsTextureCacheDirty = true;
+
 	// 4 bytes per pixel (ARGB8)
 	const uint32 textureBufferSize = width * height * 4;
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(textureBufferSize, 128);
@@ -1323,6 +1366,8 @@ TextureHandle CGcmRenderer::CreateTextureCube(
 	TextureFormat_t::Enum format,
 	const void** pFaces)
 {
+	m_IsTextureCacheDirty = true;
+
 	// 6 faces, 4 bytes per pixel (ARGB8)
 	const uint32 textureBufferSize = size * size * 4 * 6;
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(textureBufferSize, 128);
@@ -1461,8 +1506,6 @@ void CGcmRenderer::SetTexture(
 
 			break;
 	}
-
-	rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
 
 	gcmTexture gcmTex;
 	memset(&gcmTex, 0, sizeof(gcmTexture));
@@ -1618,31 +1661,83 @@ void CGcmRenderer::SetConstantBuffer(
 		return;
 	}
 
+	const ShaderProgramHandle hProgram = m_PipelineState.m_hShaderProgram;
+	CUtlMap<uint32, BoundUniform_t>& boundUniforms =
+		m_ProgramUniformBuffers[hProgram];
+	if (boundUniforms.Find(hLayout) == boundUniforms.InvalidIndex())
+	{
+		const UniformBlockLayout_t& newLayout = m_UniformBlockLayouts.Element(
+			layoutIndex);
+		UnbindOverlappingUniforms(boundUniforms, newLayout, stage);
+
+		UniformShadow_t& uniformShadow =
+			m_ProgramUniformShadows[hProgram][hLayout];
+		uniformShadow.m_IsVertexDirty = true;
+		uniformShadow.m_IsFragmentDirty = true;
+	}
+
 	BoundUniform_t boundUniform = {
 		hBuffer,
 		slot,
 		stage
 	};
-	m_ProgramUniformBuffers[m_PipelineState.m_hShaderProgram].Insert(
-		hLayout,
-		boundUniform);
-
-	UniformShadow_t& uniformShadow =
-		m_ProgramUniformShadows[m_PipelineState.m_hShaderProgram][hLayout];
-	const UniformBlockLayout_t& uniformLayout = m_UniformBlockLayouts.Element(
-		layoutIndex);
-	if (uniformShadow.m_Data.Count() < int32(uniformLayout.m_Size))
-	{
-		uniformShadow.m_Data.SetCount(int32(uniformLayout.m_Size));
-	}
-	memcpy(
-		uniformShadow.m_Data.Base(),
-		m_BufferResources.Element(bufferIndex).m_pPtr,
-		uniformLayout.m_Size);
-	uniformShadow.m_IsVertexDirty = true;
-	uniformShadow.m_IsFragmentDirty = true;
+	boundUniforms.Insert(hLayout, boundUniform);
 
 	m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::Uniforms;
+}
+
+static bool HasCommonUniform(
+	const UniformBlockLayout_t& layoutA,
+	const UniformBlockLayout_t& layoutB)
+{
+	for (int32 i = 0; i < layoutA.m_UniformNames.Count(); i++)
+	{
+		for (int32 j = 0; j < layoutB.m_UniformNames.Count(); j++)
+		{
+			if (layoutA.m_UniformNames[i] == layoutB.m_UniformNames[j])
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+void CGcmRenderer::UnbindOverlappingUniforms(
+	CUtlMap<uint32, BoundUniform_t>& boundUniforms,
+	const UniformBlockLayout_t& layout,
+	ShaderStage_t stage)
+{
+	bool hasRemoved = true;
+	while (hasRemoved)
+	{
+		hasRemoved = false;
+
+		for (int32 i = boundUniforms.FirstInorder();
+			boundUniforms.IsValidIndex(i);
+			i = boundUniforms.NextInorder(i))
+		{
+			if (!(boundUniforms.Element(i).m_Stage & stage)) continue;
+
+			const uint32 hOtherLayout = boundUniforms.Key(i);
+			int32 otherLayoutIndex = m_UniformBlockLayouts.Find(hOtherLayout);
+			if (otherLayoutIndex == m_UniformBlockLayouts.InvalidIndex())
+			{
+				continue;
+			}
+
+			if (HasCommonUniform(
+				layout,
+				m_UniformBlockLayouts.Element(otherLayoutIndex)))
+			{
+				boundUniforms.Remove(hOtherLayout);
+				hasRemoved = true;
+
+				break;
+			}
+		}
+	}
 }
 
 int32 CGcmRenderer::GetUniformBlockBinding(
@@ -1740,6 +1835,9 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 	ProgramResource_t& programResource = m_ProgramResources.Element(
 		programIndex);
 
+	const bool areRegistersStale = (m_hVertexConstantsProgram != hProgram);
+	m_hVertexConstantsProgram = hProgram;
+
 	for (int32 uniformIndex = uniforms.FirstInorder();
 		uniforms.IsValidIndex(uniformIndex);
 		uniformIndex = uniforms.NextInorder(uniformIndex))
@@ -1757,32 +1855,34 @@ void CGcmRenderer::ApplyVertexConstants(ShaderProgramHandle hProgram)
 		UniformShadow_t& uniformShadow = m_ProgramUniformShadows[hProgram][hLayout];
 		const UniformBlockLayout_t& uniformLayout = m_UniformBlockLayouts.Element(
 			layoutIndex);
-		if (uniformShadow.m_Data.Count() < int32(uniformLayout.m_Size))
+		if (uniformShadow.m_VertexData.Count() < int32(uniformLayout.m_Size))
 		{
-			uniformShadow.m_Data.SetCount(int32(uniformLayout.m_Size));
+			uniformShadow.m_VertexData.SetCount(
+				int32(uniformLayout.m_Size));
 			uniformShadow.m_IsVertexDirty = true;
-			uniformShadow.m_IsFragmentDirty = true;
 		}
 
 		const float32* pBufferData = reinterpret_cast<const float32*>(
 			m_BufferResources.Element(bufferIndex).m_pPtr);
 
-		bool hasChanged = uniformShadow.m_IsVertexDirty ||
+		bool hasChanged = areRegistersStale ||
+			uniformShadow.m_IsVertexDirty ||
 			(memcmp(
-				uniformShadow.m_Data.Base(),
+				uniformShadow.m_VertexData.Base(),
 				pBufferData,
 				uniformLayout.m_Size) != 0);
 		if (!hasChanged) continue;
 
-		memcpy(uniformShadow.m_Data.Base(), pBufferData, uniformLayout.m_Size);
-
-		__sync_synchronize();
+		memcpy(
+			uniformShadow.m_VertexData.Base(),
+			pBufferData,
+			uniformLayout.m_Size);
 
 		if (uniformLayout.m_UniformNames.IsEmpty()) continue;
 
 		CUtlMap<CFixedString, rsxProgramConst*>& constCache =
 			programResource.m_VertexProgramConstCache;
-		const uint8* pShadowData = uniformShadow.m_Data.Base();
+		const uint8* pShadowData = uniformShadow.m_VertexData.Base();
 
 		bool hasUniformMetadata =
 			uniformLayout.m_UniformOffsets.Count() ==
@@ -1913,10 +2013,10 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 		UniformShadow_t& uniformShadow = m_ProgramUniformShadows[hProgram][hLayout];
 		const UniformBlockLayout_t& uniformLayout = m_UniformBlockLayouts.Element(
 			layoutIndex);
-		if (uniformShadow.m_Data.Count() < int32(uniformLayout.m_Size))
+		if (uniformShadow.m_FragmentData.Count() < int32(uniformLayout.m_Size))
 		{
-			uniformShadow.m_Data.SetCount(int32(uniformLayout.m_Size));
-			uniformShadow.m_IsVertexDirty = true;
+			uniformShadow.m_FragmentData.SetCount(
+				int32(uniformLayout.m_Size));
 			uniformShadow.m_IsFragmentDirty = true;
 		}
 
@@ -1925,14 +2025,15 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 
 		bool hasChanged = uniformShadow.m_IsFragmentDirty ||
 			(memcmp(
-				uniformShadow.m_Data.Base(),
+				uniformShadow.m_FragmentData.Base(),
 				pBufferData,
 				uniformLayout.m_Size) != 0);
 		if (!hasChanged) continue;
 
-		memcpy(uniformShadow.m_Data.Base(), pBufferData, uniformLayout.m_Size);
-
-		__sync_synchronize();
+		memcpy(
+			uniformShadow.m_FragmentData.Base(),
+			pBufferData,
+			uniformLayout.m_Size);
 
 		if (uniformLayout.m_UniformNames.IsEmpty()) continue;
 
@@ -1941,7 +2042,7 @@ void CGcmRenderer::ApplyFragmentConstants(ShaderProgramHandle hProgram)
 
 		CUtlMap<CFixedString, rsxProgramConst*>& constCache =
 			programResource.m_FragmentProgramConstCache;
-		const uint8* pShadowData = uniformShadow.m_Data.Base();
+		const uint8* pShadowData = uniformShadow.m_FragmentData.Base();
 
 		bool hasUniformMetadata =
 			uniformLayout.m_UniformOffsets.Count() ==
@@ -2016,10 +2117,8 @@ void CGcmRenderer::Draw(
 		}
 	}
 
-	rsxInvalidateVertexCache(context);
-	rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
-
 	FlushPipelineState();
+	InvalidateCachesIfDirty();
 
 	rsxDrawVertexArray(context, GCM_TYPE_TRIANGLES, startVertex, vertexCount);
 }
@@ -2067,10 +2166,8 @@ void CGcmRenderer::DrawIndexed(
 		return;
 	}
 
-	rsxInvalidateVertexCache(context);
-	rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
-
 	FlushPipelineState();
+	InvalidateCachesIfDirty();
 
 	uint32 indexOffset =
 		m_BufferResources.Element(indexBufferIndex).m_Offset +
@@ -2559,8 +2656,21 @@ void CGcmRenderer::BindVertexAttributes(
 			dataType,
 			GCM_LOCATION_RSX);
 	}
+}
 
-	rsxInvalidateVertexCache(context);
+void CGcmRenderer::InvalidateCachesIfDirty()
+{
+	if (m_IsVertexCacheDirty)
+	{
+		rsxInvalidateVertexCache(context);
+		m_IsVertexCacheDirty = false;
+	}
+
+	if (m_IsTextureCacheDirty)
+	{
+		rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
+		m_IsTextureCacheDirty = false;
+	}
 }
 
 void CGcmRenderer::FlushProgramState()
@@ -2594,6 +2704,8 @@ void CGcmRenderer::FlushProgramState()
 		const_cast<rsxFragmentProgram*>(programResource.m_pFragmentProgram),
 		programResource.m_FragmentProgramOffset,
 		GCM_LOCATION_RSX);
+
+	m_hVertexConstantsProgram = 0;
 }
 
 #ifdef PS3_SPU_ENABLED
