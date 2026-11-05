@@ -265,11 +265,7 @@ void CGcmRenderer::Shutdown()
 			continue;
 		}
 
-		if (bufferResource.m_pPtr)
-		{
-			m_StaticHeap.Free(bufferResource.m_Alloc);
-			bufferResource.m_pPtr = GCMGL_NULL;
-		}
+		FreeBufferMemory(bufferResource);
 	}
 	m_BufferResources.RemoveAll();
 
@@ -989,31 +985,47 @@ BufferHandle CGcmRenderer::CreateConstantBuffer(
 	uint64 size,
 	BufferUsage_t::Enum usage)
 {
-	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
-	if (!rsxAllocation.m_pPtr)
+	void* pData = CUtlMemory::AlignedAlloc(size, 16);
+	if (!pData)
 	{
 		Error("[CGcmRenderer] Failed to allocate constant buffer memory\n");
 
 		return 0;
 	}
+	memset(pData, 0, size_t(size));
 
 	BufferHandle hBuffer = m_NextHandle++;
 	const BufferResource_t bufferResource = {
-		rsxAllocation.m_pPtr,
-		rsxAllocation.m_Offset,
+		pData,
+		0xffffffff,
 		uint32(size),
-		rsxAllocation
+		RsxAllocation_t()
 	};
 	if (m_BufferResources.Insert(hBuffer, bufferResource) == -1)
 	{
 		Error("[CGcmRenderer] Buffer resource map is full\n");
 
-		m_StaticHeap.Free(rsxAllocation);
+		CUtlMemory::AlignedFree(pData);
 
 		return 0;
 	}
 
 	return hBuffer;
+}
+
+void CGcmRenderer::FreeBufferMemory(BufferResource_t& bufferResource)
+{
+	if (bufferResource.m_Alloc.m_pPtr)
+	{
+		m_StaticHeap.Free(bufferResource.m_Alloc);
+	}
+	else if (bufferResource.m_pPtr)
+	{
+		CUtlMemory::AlignedFree(bufferResource.m_pPtr);
+	}
+
+	bufferResource.m_pPtr = GCMGL_NULL;
+	bufferResource.m_Alloc = RsxAllocation_t();
 }
 
 void CGcmRenderer::UpdateBuffer(
@@ -1037,7 +1049,10 @@ void CGcmRenderer::UpdateBuffer(
 		pData,
 		updateSize);
 
-	__sync_synchronize();
+	if (bufferResource.m_Alloc.m_pPtr)
+	{
+		__sync_synchronize();
+	}
 }
 
 void CGcmRenderer::DestroyBuffer(BufferHandle hBuffer)
@@ -1050,8 +1065,7 @@ void CGcmRenderer::DestroyBuffer(BufferHandle hBuffer)
 		return;
 	}
 
-	void* pPtr = m_BufferResources.Element(bufferIndex).m_pPtr;
-	if (pPtr) m_StaticHeap.Free(m_BufferResources.Element(bufferIndex).m_Alloc);
+	FreeBufferMemory(m_BufferResources.Element(bufferIndex));
 
 	m_BufferResources.Remove(hBuffer);
 

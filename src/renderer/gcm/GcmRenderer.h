@@ -198,6 +198,8 @@ protected:
 		RsxAllocation_t m_Alloc;
 	};
 
+	void FreeBufferMemory(BufferResource_t& bufferResource);
+
 	struct StagingBuffer_t
 	{
 		StagingBuffer_t() :
