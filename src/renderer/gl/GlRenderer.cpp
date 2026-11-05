@@ -1460,13 +1460,53 @@ void CGlRenderer::SetConstantBuffer(
 		return;
 	}
 
-	BoundUniform_t& boundUniform =
-		m_ProgramUniformBuffers[m_PipelineState.m_hShaderProgram][hLayout];
+	CUtlMap<uint32, BoundUniform_t>& boundUniforms =
+		m_ProgramUniformBuffers[m_PipelineState.m_hShaderProgram];
+	if (boundUniforms.Find(hLayout) == boundUniforms.InvalidIndex())
+	{
+		UnbindOverlappingUniforms(
+			boundUniforms,
+			m_UniformBlockLayouts.Element(layoutIndex));
+	}
+
+	BoundUniform_t& boundUniform = boundUniforms[hLayout];
 	boundUniform.m_hBuffer = hBuffer;
 	boundUniform.m_Slot = slot;
 	boundUniform.m_Stage = stage;
 
 	m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::Uniforms;
+}
+
+void CGlRenderer::UnbindOverlappingUniforms(
+	CUtlMap<uint32, BoundUniform_t>& boundUniforms,
+	const UniformBlockLayout_t& layout)
+{
+	bool hasRemoved = true;
+	while (hasRemoved)
+	{
+		hasRemoved = false;
+
+		for (int32 i = boundUniforms.FirstInorder();
+			boundUniforms.IsValidIndex(i);
+			i = boundUniforms.NextInorder(i))
+		{
+			const uint32 hOtherLayout = boundUniforms.Key(i);
+			int32 otherLayoutIndex = m_UniformBlockLayouts.Find(hOtherLayout);
+			if (otherLayoutIndex == m_UniformBlockLayouts.InvalidIndex())
+			{
+				continue;
+			}
+
+			if (m_UniformBlockLayouts.Element(otherLayoutIndex).m_Binding ==
+				layout.m_Binding)
+			{
+				boundUniforms.Remove(hOtherLayout);
+				hasRemoved = true;
+
+				break;
+			}
+		}
+	}
 }
 
 int32 CGlRenderer::GetUniformBlockBinding(
