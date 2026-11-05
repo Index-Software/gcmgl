@@ -175,6 +175,8 @@ void CGcmBatchRenderer::FlushPendingBatches()
 		m_PipelineState.m_hIndexBuffer = pendingDrawState.m_hIndexBuffer;
 		m_PipelineState.m_IndexOffset = 0;
 
+		m_IsVertexCacheDirty = true;
+
 #ifdef GCMGL_DIAGNOSTICS
 		const uint64 drawStart = PerfTimer_Now();
 #endif // GCMGL_DIAGNOSTICS
@@ -188,6 +190,8 @@ void CGcmBatchRenderer::FlushPendingBatches()
 	}
 	else
 	{
+		m_IsVertexCacheDirty = true;
+
 #ifdef GCMGL_DIAGNOSTICS
 		const uint64 drawStart = PerfTimer_Now();
 #endif // GCMGL_DIAGNOSTICS
@@ -743,6 +747,8 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 	m_PipelineState.m_VertexOffset = 0;
 	m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::VertexBuffer;
 
+	m_IsVertexCacheDirty = true;
+
 	Draw(totalVertices);
 
 	m_PipelineState.m_IndexOffset = 0;
@@ -1087,6 +1093,8 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 	m_StateDirtyFlags = m_StateDirtyFlags |
 		StateDirtyFlags_t::VertexBuffer |
 		StateDirtyFlags_t::IndexBuffer;
+
+	m_IsVertexCacheDirty = true;
 
 	DrawIndexed(totalIndices, 0, 0);
 

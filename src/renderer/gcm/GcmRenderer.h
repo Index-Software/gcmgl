@@ -198,6 +198,8 @@ protected:
 		RsxAllocation_t m_Alloc;
 	};
 
+	void FreeBufferMemory(BufferResource_t& bufferResource);
+
 	struct StagingBuffer_t
 	{
 		StagingBuffer_t() :
@@ -239,6 +241,13 @@ protected:
 #endif // PS3_SPU_ENABLED
 	int32 m_InstanceBufferIndex;
 	int32 m_StagingIndex;
+
+	ShaderProgramHandle m_hVertexConstantsProgram;
+
+	bool m_IsTextureCacheDirty;
+	bool m_IsVertexCacheDirty;
+
+	void InvalidateCachesIfDirty();
 
 	GcmPostProcessState_t m_PostProcessState;
 private:
@@ -292,10 +301,22 @@ private:
 
 	struct UniformShadow_t
 	{
-		CUtlVector<uint8> m_Data;
+		UniformShadow_t() :
+			m_IsVertexDirty(false),
+			m_IsFragmentDirty(false)
+		{
+		}
+
+		CUtlVector<uint8> m_VertexData;
+		CUtlVector<uint8> m_FragmentData;
 		bool m_IsVertexDirty;
 		bool m_IsFragmentDirty;
 	};
+
+	void UnbindOverlappingUniforms(
+		CUtlMap<uint32, BoundUniform_t>& boundUniforms,
+		const UniformBlockLayout_t& layout,
+		ShaderStage_t stage);
 
 	CUtlMap<ShaderProgramHandle, CUtlMap<uint32, UniformShadow_t> >
 		m_ProgramUniformShadows;

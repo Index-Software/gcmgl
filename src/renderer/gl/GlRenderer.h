@@ -245,6 +245,10 @@ private:
 		ShaderStage_t m_Stage;
 	};
 
+	void UnbindOverlappingUniforms(
+		CUtlMap<uint32, BoundUniform_t>& boundUniforms,
+		const UniformBlockLayout_t& layout);
+
 	Viewport_t m_Viewport;
 	float32 m_ViewportScale[4];
 	float32 m_ViewportOffset[4];
