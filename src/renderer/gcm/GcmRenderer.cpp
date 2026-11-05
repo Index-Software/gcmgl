@@ -37,7 +37,9 @@ CGcmRenderer::CGcmRenderer() :
 	m_HostSize(0),
 	m_StagingIndex(0),
 	m_InstanceBufferIndex(0),
-	m_hVertexConstantsProgram(0)
+	m_hVertexConstantsProgram(0),
+	m_IsTextureCacheDirty(true),
+	m_IsVertexCacheDirty(true)
 {
 	memset(&m_PostProcessState, 0, sizeof(m_PostProcessState));
 }
@@ -310,6 +312,10 @@ void CGcmRenderer::BeginFrame()
 	m_StateDirtyFlags = StateDirtyFlags_t::All;
 	m_InstanceBufferIndex = 0;
 
+	// Invalidate once per frame to cover writes made between frames
+	m_IsTextureCacheDirty = true;
+	m_IsVertexCacheDirty = true;
+
 	SetEnvironment();
 
 	if (m_PostProcessState.m_pVertexProgram &&
@@ -463,6 +469,8 @@ RenderTargetHandle CGcmRenderer::CreateRenderTarget(
 	TextureFormat_t::Enum colorFormat,
 	TextureFormat_t::Enum depthFormat)
 {
+	m_IsTextureCacheDirty = true;
+
 	uint32 colorPitch = (width * 4 + 63) & ~63;
 	RsxAllocation_t colorAlloc;
 	colorAlloc.m_pPtr = GCMGL_NULL;
@@ -618,6 +626,8 @@ RenderTargetHandle CGcmRenderer::CreateRenderTargetCube(
 	TextureFormat_t::Enum colorFormat,
 	TextureFormat_t::Enum depthFormat)
 {
+	m_IsTextureCacheDirty = true;
+
 	uint32 colorPitch = (size * 4 + 63) & ~63;
 	RsxAllocation_t colorAlloc;
 	colorAlloc.m_pPtr = GCMGL_NULL;
@@ -798,6 +808,10 @@ void CGcmRenderer::SetRenderTarget(
 	RenderTargetHandle hRenderTarget,
 	uint32 faceIndex)
 {
+	// The target rendered so far may be sampled from now on, so the texture
+	// cache must not serve its old contents
+	m_IsTextureCacheDirty = true;
+
 	if (hRenderTarget == 0)
 	{
 		if (m_PostProcessState.m_pVertexProgram &&
@@ -908,6 +922,8 @@ BufferHandle CGcmRenderer::CreateVertexBuffer(
 	uint64 size,
 	BufferUsage_t::Enum usage)
 {
+	m_IsVertexCacheDirty = true;
+
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
 	if (!rsxAllocation.m_pPtr)
 	{
@@ -950,6 +966,8 @@ BufferHandle CGcmRenderer::CreateIndexBuffer(
 	IndexFormat_t::Enum format,
 	BufferUsage_t::Enum usage)
 {
+	m_IsVertexCacheDirty = true;
+
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(uint32(size), 64);
 	if (!rsxAllocation.m_pPtr)
 	{
@@ -1057,6 +1075,8 @@ void CGcmRenderer::UpdateBuffer(
 	if (bufferResource.m_Alloc.m_pPtr)
 	{
 		__sync_synchronize();
+
+		m_IsVertexCacheDirty = true;
 	}
 }
 
@@ -1094,6 +1114,8 @@ void* CGcmRenderer::MapBuffer(BufferHandle hBuffer)
 
 		return GCMGL_NULL;
 	}
+
+	m_IsVertexCacheDirty = true;
 
 	return m_BufferResources.Element(bufferIndex).m_pPtr;
 }
@@ -1253,6 +1275,8 @@ TextureHandle CGcmRenderer::CreateTexture2D(
 	TextureFormat_t::Enum format,
 	const void* pData)
 {
+	m_IsTextureCacheDirty = true;
+
 	// 4 bytes per pixel (ARGB8)
 	const uint32 textureBufferSize = width * height * 4;
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(textureBufferSize, 128);
@@ -1342,6 +1366,8 @@ TextureHandle CGcmRenderer::CreateTextureCube(
 	TextureFormat_t::Enum format,
 	const void** pFaces)
 {
+	m_IsTextureCacheDirty = true;
+
 	// 6 faces, 4 bytes per pixel (ARGB8)
 	const uint32 textureBufferSize = size * size * 4 * 6;
 	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(textureBufferSize, 128);
@@ -1480,8 +1506,6 @@ void CGcmRenderer::SetTexture(
 
 			break;
 	}
-
-	rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
 
 	gcmTexture gcmTex;
 	memset(&gcmTex, 0, sizeof(gcmTexture));
@@ -2093,10 +2117,8 @@ void CGcmRenderer::Draw(
 		}
 	}
 
-	rsxInvalidateVertexCache(context);
-	rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
-
 	FlushPipelineState();
+	InvalidateCachesIfDirty();
 
 	rsxDrawVertexArray(context, GCM_TYPE_TRIANGLES, startVertex, vertexCount);
 }
@@ -2144,10 +2166,8 @@ void CGcmRenderer::DrawIndexed(
 		return;
 	}
 
-	rsxInvalidateVertexCache(context);
-	rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
-
 	FlushPipelineState();
+	InvalidateCachesIfDirty();
 
 	uint32 indexOffset =
 		m_BufferResources.Element(indexBufferIndex).m_Offset +
@@ -2636,8 +2656,21 @@ void CGcmRenderer::BindVertexAttributes(
 			dataType,
 			GCM_LOCATION_RSX);
 	}
+}
 
-	rsxInvalidateVertexCache(context);
+void CGcmRenderer::InvalidateCachesIfDirty()
+{
+	if (m_IsVertexCacheDirty)
+	{
+		rsxInvalidateVertexCache(context);
+		m_IsVertexCacheDirty = false;
+	}
+
+	if (m_IsTextureCacheDirty)
+	{
+		rsxInvalidateTextureCache(context, GCM_INVALIDATE_TEXTURE);
+		m_IsTextureCacheDirty = false;
+	}
 }
 
 void CGcmRenderer::FlushProgramState()

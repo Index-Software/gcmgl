@@ -244,6 +244,11 @@ protected:
 
 	ShaderProgramHandle m_hVertexConstantsProgram;
 
+	bool m_IsTextureCacheDirty;
+	bool m_IsVertexCacheDirty;
+
+	void InvalidateCachesIfDirty();
+
 	GcmPostProcessState_t m_PostProcessState;
 private:
 	struct ProgramResource_t
