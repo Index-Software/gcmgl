@@ -103,7 +103,8 @@ public:
 	virtual TextureHandle CreateTextureCube(
 		uint32 size,
 		TextureFormat_t::Enum format,
-		const void** pFaces = GCMGL_NULL) GCMGL_OVERRIDE;
+		const void** ppFaces = GCMGL_NULL,
+		uint32 mipCount = 1) GCMGL_OVERRIDE;
 	virtual void SetTexture(
 		TextureHandle hTexture,
 		uint32 slot,
