@@ -1138,6 +1138,12 @@ TextureHandle CGlRenderer::CreateTexture2D(
 			glType = GL_UNSIGNED_BYTE;
 
 			break;
+		case TextureFormat_t::SRGBA8:
+			internalFormat = GL_SRGB8_ALPHA8;
+			glFormat = GL_RGBA;
+			glType = GL_UNSIGNED_BYTE;
+
+			break;
 		case TextureFormat_t::Depth16:
 			internalFormat = GL_DEPTH_COMPONENT16;
 			glFormat = GL_DEPTH_COMPONENT;
@@ -1233,6 +1239,12 @@ TextureHandle CGlRenderer::CreateTextureCube(
 			break;
 		case TextureFormat_t::RGBA8:
 			internalFormat = GL_RGBA8;
+			glFormat = GL_RGBA;
+			glType = GL_UNSIGNED_BYTE;
+
+			break;
+		case TextureFormat_t::SRGBA8:
+			internalFormat = GL_SRGB8_ALPHA8;
 			glFormat = GL_RGBA;
 			glType = GL_UNSIGNED_BYTE;
 

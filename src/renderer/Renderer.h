@@ -135,6 +135,7 @@ struct TextureFormat_t
 		RG8,
 		RGB8,
 		RGBA8,
+		SRGBA8,
 		R16F,
 		RG16F,
 		RGB16F,

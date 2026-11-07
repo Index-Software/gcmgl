@@ -29,6 +29,102 @@
 #include "spu/SpuBatchTransformManager.h"
 #endif // PS3_SPU_ENABLED
 
+static uint32 GetSwizzledTexelIndex(uint32 x, uint32 y, uint32 log2Size)
+{
+	uint32 index = 0;
+	for (uint32 bit = 0; bit < log2Size; bit++)
+	{
+		index |= ((x >> bit) & 1) << (2 * bit);
+		index |= ((y >> bit) & 1) << (2 * bit + 1);
+	}
+
+	return index;
+}
+
+static void ConvertTexelToArgb8(
+	TextureFormat_t::Enum format,
+	const uint8* pSrc,
+	uint32 index,
+	uint8* pDst)
+{
+	switch (format)
+	{
+		case TextureFormat_t::R8:
+			pDst[0] = 255;
+			pDst[1] = 0;
+			pDst[2] = 0;
+			pDst[3] = pSrc[index];
+
+			break;
+		case TextureFormat_t::RG8:
+			pDst[0] = 255;
+			pDst[1] = 0;
+			pDst[2] = pSrc[index * 2];
+			pDst[3] = pSrc[index * 2 + 1];
+
+			break;
+		case TextureFormat_t::RGB8:
+			pDst[0] = 255;
+			pDst[1] = pSrc[index * 3];
+			pDst[2] = pSrc[index * 3 + 1];
+			pDst[3] = pSrc[index * 3 + 2];
+
+			break;
+		case TextureFormat_t::RGBA8:
+		case TextureFormat_t::SRGBA8:
+			pDst[0] = pSrc[index * 4 + 3];
+			pDst[1] = pSrc[index * 4];
+			pDst[2] = pSrc[index * 4 + 1];
+			pDst[3] = pSrc[index * 4 + 2];
+
+			break;
+		default:
+			memcpy(pDst, pSrc + index * 4, 4);
+
+			break;
+	}
+}
+
+static void WriteSquareTextureLevel(
+	TextureFormat_t::Enum format,
+	const uint8* pSrc,
+	uint32 size,
+	bool isSwizzled,
+	uint8* pDst)
+{
+	const uint32 log2Size = CMaths::Log2(size);
+	for (uint32 y = 0; y < size; y++)
+	{
+		for (uint32 x = 0; x < size; x++)
+		{
+			const uint32 srcIndex = y * size + x;
+			const uint32 dstIndex = isSwizzled
+				? GetSwizzledTexelIndex(x, y, log2Size)
+				: srcIndex;
+
+			ConvertTexelToArgb8(format, pSrc, srcIndex, pDst + dstIndex * 4);
+		}
+	}
+}
+
+static bool HasCommonUniform(
+	const UniformBlockLayout_t& layoutA,
+	const UniformBlockLayout_t& layoutB)
+{
+	for (int32 i = 0; i < layoutA.m_UniformNames.Count(); i++)
+	{
+		for (int32 j = 0; j < layoutB.m_UniformNames.Count(); j++)
+		{
+			if (layoutA.m_UniformNames[i] == layoutB.m_UniformNames[j])
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 CGcmRenderer::CGcmRenderer() :
 #ifdef PS3_SPU_ENABLED
 	m_pSpuBatchTransformManager(GCMGL_NULL),
@@ -1500,6 +1596,7 @@ void CGcmRenderer::SetTexture(
 			break;
 		case TextureFormat_t::RGB8:
 		case TextureFormat_t::RGBA8:
+		case TextureFormat_t::SRGBA8:
 		default:
 			gcmTextureFormat = GCM_TEXTURE_FORMAT_A8R8G8B8 | GCM_TEXTURE_FORMAT_LIN;
 			texturePitch = textureResource.m_Width * 4;
@@ -1561,6 +1658,10 @@ void CGcmRenderer::SetTexture(
 		textureResource.m_Format == TextureFormat_t::Depth24 ||
 		textureResource.m_Format == TextureFormat_t::Depth24Stencil8;
 
+	const uint8 gamma = textureResource.m_Format == TextureFormat_t::SRGBA8
+		? GCM_TEXTURE_GAMMA_R | GCM_TEXTURE_GAMMA_G | GCM_TEXTURE_GAMMA_B
+		: 0;
+
 	rsxTextureWrapMode(
 		context,
 		slot,
@@ -1569,7 +1670,7 @@ void CGcmRenderer::SetTexture(
 		gcmWrapMode,
 		0,
 		isDepthTexture ? GCM_TEXTURE_ZFUNC_NEVER : textureResource.m_ZFunc,
-		0);
+		gamma);
 }
 
 void CGcmRenderer::SetTextureCompareMode(
