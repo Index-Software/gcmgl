@@ -1204,7 +1204,8 @@ TextureHandle CGlRenderer::CreateTexture2D(
 TextureHandle CGlRenderer::CreateTextureCube(
 	uint32 size,
 	TextureFormat_t::Enum format,
-	const void** pFaces)
+	const void** ppFaces,
+	uint32 mipCount)
 {
 	GLuint id;
 	glGenTextures(1, &id);
@@ -1281,21 +1282,32 @@ TextureHandle CGlRenderer::CreateTextureCube(
 			break;
 	}
 
-	for (int32 i = 0; i < 6; i++)
+	for (uint32 level = 0; level < mipCount; level++)
 	{
-		glTexImage2D(
-			GL_TEXTURE_CUBE_MAP_POSITIVE_X + uint32(i),
-			0,
-			internalFormat,
-			static_cast<GLsizei>(size),
-			static_cast<GLsizei>(size),
-			0,
-			glFormat,
-			glType,
-			pFaces ? pFaces[i] : GCMGL_NULL);
+		const uint32 levelSize = GetMipLevelSize(size, level);
+		for (uint32 face = 0; face < 6; face++)
+		{
+			glTexImage2D(
+				GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+				static_cast<GLint>(level),
+				internalFormat,
+				static_cast<GLsizei>(levelSize),
+				static_cast<GLsizei>(levelSize),
+				0,
+				glFormat,
+				glType,
+				ppFaces ? ppFaces[level * 6 + face] : GCMGL_NULL);
+		}
 	}
 
-	if (!isDepth)
+	if (mipCount > 1)
+	{
+		glTexParameteri(
+			GL_TEXTURE_CUBE_MAP,
+			GL_TEXTURE_MAX_LEVEL,
+			static_cast<GLint>(mipCount - 1));
+	}
+	else if (!isDepth)
 	{
 		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 	}

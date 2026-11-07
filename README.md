@@ -258,7 +258,7 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `void DestroyShaderProgram(ShaderProgramHandle hProgram)`
 - `void ClearShaderCache()`
 - `TextureHandle CreateTexture2D(uint32 width, uint32 height, TextureFormat_t::Enum format, const void* pData = GCMGL_NULL)`
-- `TextureHandle CreateTextureCube(uint32 size, TextureFormat_t::Enum format, const void** ppFaces = GCMGL_NULL)`
+- `TextureHandle CreateTextureCube(uint32 size, TextureFormat_t::Enum format, const void** ppFaces = GCMGL_NULL, uint32 mipCount = 1)`
 - `void SetTexture(TextureHandle hTexture, uint32 slot, ShaderStage_t stage, TextureWrapMode_t::Enum wrapMode = TextureWrapMode_t::Repeat)`
 - `void SetTextureCompareMode(TextureHandle hTexture, TextureCompareMode_t::Enum compareMode)`
 - `void SetSampler(SamplerHandle hSampler, uint32 slot, ShaderStage_t stage)`

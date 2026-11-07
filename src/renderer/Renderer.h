@@ -608,7 +608,8 @@ public:
 	virtual TextureHandle CreateTextureCube(
 		uint32 size,
 		TextureFormat_t::Enum format,
-		const void** ppFaces = GCMGL_NULL) = 0;
+		const void** ppFaces = GCMGL_NULL,
+		uint32 mipCount = 1) = 0;
 	virtual void SetTexture(
 		TextureHandle hTexture,
 		uint32 slot,
@@ -770,6 +771,13 @@ protected:
 	uint32 AllocHandle()
 	{
 		return m_NextHandle++;
+	}
+
+	static uint32 GetMipLevelSize(uint32 size, uint32 level)
+	{
+		const uint32 levelSize = size >> level;
+
+		return levelSize > 0 ? levelSize : 1;
 	}
 
 	PipelineState_t m_PipelineState;

@@ -71,7 +71,6 @@ static void ConvertTexelToArgb8(
 
 			break;
 		case TextureFormat_t::RGBA8:
-		case TextureFormat_t::SRGBA8:
 			pDst[0] = pSrc[index * 4 + 3];
 			pDst[1] = pSrc[index * 4];
 			pDst[2] = pSrc[index * 4 + 1];
@@ -1382,75 +1381,29 @@ TextureHandle CGcmRenderer::CreateTexture2D(
 
 		return 0;
 	}
+
 	void* pTextureBuffer = rsxAllocation.m_pPtr;
 
 	if (pData)
 	{
 		uint8* pDst = reinterpret_cast<uint8*>(pTextureBuffer);
 		const uint8* pSrc = reinterpret_cast<const uint8*>(pData);
-
-		switch (format)
+		for (uint32 i = 0; i < width * height; i++)
 		{
-			case TextureFormat_t::R8:
-				for (uint32 i = 0, j = 0; i < width * height; i++, j += 4)
-				{
-					pDst[j + 0] = 255;
-					pDst[j + 1] = 0;
-					pDst[j + 2] = 0;
-					pDst[j + 3] = pSrc[i];
-				}
-
-				break;
-			case TextureFormat_t::RG8:
-				for (uint32 i = 0, j = 0; i < width * height * 2; i += 2, j += 4)
-				{
-					pDst[j + 0] = 255;
-					pDst[j + 1] = 0;
-					pDst[j + 2] = pSrc[i];
-					pDst[j + 3] = pSrc[i + 1];
-				}
-
-				break;
-			case TextureFormat_t::RGB8:
-				for (uint32 i = 0, j = 0; i < width * height * 3; i += 3, j += 4)
-				{
-					pDst[j + 0] = 255;
-					pDst[j + 1] = pSrc[i];
-					pDst[j + 2] = pSrc[i + 1];
-					pDst[j + 3] = pSrc[i + 2];
-				}
-
-				break;
-			case TextureFormat_t::RGBA8:
-				for (uint32 i = 0; i < width * height * 4; i += 4)
-				{
-					pDst[i + 0] = pSrc[i + 3];
-					pDst[i + 1] = pSrc[i + 0];
-					pDst[i + 2] = pSrc[i + 1];
-					pDst[i + 3] = pSrc[i + 2];
-				}
-
-				break;
-			default:
-				memcpy(pDst, pSrc, textureBufferSize);
-
-				break;
+			ConvertTexelToArgb8(format, pSrc, i, pDst + i * 4);
 		}
 	}
 
 	uint32 textureOffset;
 	rsxAddressToOffset(pTextureBuffer, &textureOffset);
 
-	const TextureResource_t textureResource = {
-		pTextureBuffer,
-		textureOffset,
-		width,
-		height,
-		format,
-		rsxAllocation,
-		false,
-		GCM_TEXTURE_ZFUNC_LESS
-	};
+	TextureResource_t textureResource;
+	textureResource.m_Alloc = rsxAllocation;
+	textureResource.m_pBuffer = pTextureBuffer;
+	textureResource.m_Offset = textureOffset;
+	textureResource.m_Width = width;
+	textureResource.m_Height = height;
+	textureResource.m_Format = format;
 	const TextureHandle hTexture = m_NextHandle++;
 	m_TextureResources.Insert(hTexture, textureResource);
 
@@ -1460,91 +1413,73 @@ TextureHandle CGcmRenderer::CreateTexture2D(
 TextureHandle CGcmRenderer::CreateTextureCube(
 	uint32 size,
 	TextureFormat_t::Enum format,
-	const void** pFaces)
+	const void** ppFaces,
+	uint32 mipCount)
 {
 	m_IsTextureCacheDirty = true;
 
-	// 6 faces, 4 bytes per pixel (ARGB8)
-	const uint32 textureBufferSize = size * size * 4 * 6;
-	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(textureBufferSize, 128);
+	const bool isSwizzled = CMaths::IsPowerOfTwo(size);
+	if (!isSwizzled && mipCount > 1)
+	{
+		Warning("[CGcmRenderer] Mipmapped cubemaps need a power of two size\n");
+		mipCount = 1;
+	}
+
+	// whole mip, 4 bytes per pixel (ARGB8)
+	uint32 faceSize = 0;
+	for (uint32 level = 0; level < mipCount; level++)
+	{
+		const uint32 levelSize = GetMipLevelSize(size, level);
+		faceSize += levelSize * levelSize * 4;
+	}
+
+	const uint32 faceAlignment = GCM_TEXTURE_SWIZZLED_CUBEMAP_FACE_ALIGN_OFFSET;
+	const uint32 faceStride = isSwizzled
+		? (faceSize + faceAlignment - 1) & ~(faceAlignment - 1)
+		: faceSize;
+
+	RsxAllocation_t rsxAllocation = m_StaticHeap.Alloc(faceStride * 6, 128);
 	if (!rsxAllocation.m_pPtr)
 	{
 		Warning("[CGcmRenderer] Failed to allocate texture buffer memory\n");
 
 		return 0;
 	}
-	void* pTextureBuffer = rsxAllocation.m_pPtr;
 
-	for (int32 i = 0; i < 6; i++)
+	uint8* pTextureBuffer = reinterpret_cast<uint8*>(rsxAllocation.m_pPtr);
+	for (uint32 face = 0; face < 6; face++)
 	{
-		if (!pFaces || !pFaces[i]) continue;
-
-		uint8* pDst = reinterpret_cast<uint8*>(pTextureBuffer) +
-			uint32(i) * size * size * 4;
-		const uint8* pSrc = reinterpret_cast<const uint8*>(pFaces[i]);
-
-		switch (format)
+		uint8* pDst = pTextureBuffer + face * faceStride;
+		for (uint32 level = 0; level < mipCount; level++)
 		{
-			case TextureFormat_t::R8:
-				for (uint32 j = 0, k = 0; j < size * size; j++, k += 4)
-				{
-					pDst[k + 0] = 255;
-					pDst[k + 1] = 0;
-					pDst[k + 2] = 0;
-					pDst[k + 3] = pSrc[j];
-				}
+			const uint32 levelSize = GetMipLevelSize(size, level);
+			if (ppFaces && ppFaces[level * 6 + face])
+			{
+				WriteSquareTextureLevel(
+					format,
+					reinterpret_cast<const uint8*>(ppFaces[level * 6 + face]),
+					levelSize,
+					isSwizzled,
+					pDst);
+			}
 
-				break;
-			case TextureFormat_t::RG8:
-				for (uint32 j = 0, k = 0; j < size * size * 2; j += 2, k += 4)
-				{
-					pDst[k + 0] = 255;
-					pDst[k + 1] = 0;
-					pDst[k + 2] = pSrc[j];
-					pDst[k + 3] = pSrc[j + 1];
-				}
-
-				break;
-			case TextureFormat_t::RGB8:
-				for (uint32 j = 0, k = 0; j < size * size * 3; j += 3, k += 4)
-				{
-					pDst[k + 0] = 255;
-					pDst[k + 1] = pSrc[j];
-					pDst[k + 2] = pSrc[j + 1];
-					pDst[k + 3] = pSrc[j + 2];
-				}
-
-				break;
-			case TextureFormat_t::RGBA8:
-				for (uint32 j = 0; j < size * size * 4; j += 4)
-				{
-					pDst[j + 0] = pSrc[j + 3];
-					pDst[j + 1] = pSrc[j + 0];
-					pDst[j + 2] = pSrc[j + 1];
-					pDst[j + 3] = pSrc[j + 2];
-				}
-
-				break;
-			default:
-				memcpy(pDst, pSrc, size * size * 4);
-
-				break;
+			pDst += levelSize * levelSize * 4;
 		}
 	}
 
 	uint32 textureOffset;
 	rsxAddressToOffset(pTextureBuffer, &textureOffset);
 
-	const TextureResource_t textureResource = {
-		pTextureBuffer,
-		textureOffset,
-		size,
-		size,
-		format,
-		rsxAllocation,
-		true,
-		GCM_TEXTURE_ZFUNC_LESS
-	};
+	TextureResource_t textureResource;
+	textureResource.m_Alloc = rsxAllocation;
+	textureResource.m_pBuffer = pTextureBuffer;
+	textureResource.m_Offset = textureOffset;
+	textureResource.m_Width = size;
+	textureResource.m_Height = size;
+	textureResource.m_MipCount = mipCount;
+	textureResource.m_Format = format;
+	textureResource.m_IsCubemap = true;
+	textureResource.m_IsSwizzled = isSwizzled;
 	const TextureHandle hTexture = m_NextHandle++;
 	m_TextureResources.Insert(hTexture, textureResource);
 
@@ -1604,10 +1539,16 @@ void CGcmRenderer::SetTexture(
 			break;
 	}
 
+	if (textureResource.m_IsSwizzled)
+	{
+		gcmTextureFormat &= ~GCM_TEXTURE_FORMAT_LIN;
+		texturePitch = 0;
+	}
+
 	gcmTexture gcmTex;
 	memset(&gcmTex, 0, sizeof(gcmTexture));
 	gcmTex.format = static_cast<uint8>(gcmTextureFormat);
-	gcmTex.mipmap = 1;
+	gcmTex.mipmap = static_cast<uint8>(textureResource.m_MipCount);
 	gcmTex.dimension = GCM_TEXTURE_DIMS_2D;
 	gcmTex.cubemap =
 		static_cast<uint8>(textureResource.m_IsCubemap ? GCM_TRUE : GCM_FALSE);
@@ -1640,7 +1581,9 @@ void CGcmRenderer::SetTexture(
 		context,
 		slot,
 		0,
-		GCM_TEXTURE_LINEAR,
+		textureResource.m_MipCount > 1
+			? GCM_TEXTURE_LINEAR_MIPMAP_LINEAR
+			: GCM_TEXTURE_LINEAR,
 		GCM_TEXTURE_LINEAR,
 		GCM_TEXTURE_CONVOLUTION_QUINCUNX);
 
@@ -1785,24 +1728,6 @@ void CGcmRenderer::SetConstantBuffer(
 	boundUniforms.Insert(hLayout, boundUniform);
 
 	m_StateDirtyFlags = m_StateDirtyFlags | StateDirtyFlags_t::Uniforms;
-}
-
-static bool HasCommonUniform(
-	const UniformBlockLayout_t& layoutA,
-	const UniformBlockLayout_t& layoutB)
-{
-	for (int32 i = 0; i < layoutA.m_UniformNames.Count(); i++)
-	{
-		for (int32 j = 0; j < layoutB.m_UniformNames.Count(); j++)
-		{
-			if (layoutA.m_UniformNames[i] == layoutB.m_UniformNames[j])
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
 }
 
 void CGcmRenderer::UnbindOverlappingUniforms(

@@ -112,7 +112,8 @@ public:
 	virtual TextureHandle CreateTextureCube(
 		uint32 size,
 		TextureFormat_t::Enum format,
-		const void** pFaces = GCMGL_NULL) GCMGL_OVERRIDE;
+		const void** ppFaces = GCMGL_NULL,
+		uint32 mipCount = 1) GCMGL_OVERRIDE;
 	virtual void SetTexture(
 		TextureHandle hTexture,
 		uint32 slot,
@@ -272,14 +273,29 @@ private:
 
 	struct TextureResource_t
 	{
+		RsxAllocation_t m_Alloc;
 		void* m_pBuffer;
 		uint32 m_Offset;
 		uint32 m_Width;
 		uint32 m_Height;
-		TextureFormat_t::Enum m_Format;
-		RsxAllocation_t m_Alloc;
-		bool m_IsCubemap;
+		uint32 m_MipCount;
 		uint32 m_ZFunc;
+		TextureFormat_t::Enum m_Format;
+		bool m_IsCubemap;
+		bool m_IsSwizzled;
+
+		TextureResource_t() :
+			m_pBuffer(GCMGL_NULL),
+			m_Offset(0),
+			m_Width(0),
+			m_Height(0),
+			m_MipCount(1),
+			m_ZFunc(GCM_TEXTURE_ZFUNC_LESS),
+			m_Format(TextureFormat_t::RGBA8),
+			m_IsCubemap(false),
+			m_IsSwizzled(false)
+		{
+		}
 	};
 
 	struct RenderTargetResource_t
