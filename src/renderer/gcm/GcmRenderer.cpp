@@ -1531,6 +1531,7 @@ void CGcmRenderer::SetTexture(
 			break;
 		case TextureFormat_t::RGB8:
 		case TextureFormat_t::RGBA8:
+		case TextureFormat_t::SRGBA8:
 		default:
 			gcmTextureFormat = GCM_TEXTURE_FORMAT_A8R8G8B8 | GCM_TEXTURE_FORMAT_LIN;
 			texturePitch = textureResource.m_Width * 4;
@@ -1600,6 +1601,10 @@ void CGcmRenderer::SetTexture(
 		textureResource.m_Format == TextureFormat_t::Depth24 ||
 		textureResource.m_Format == TextureFormat_t::Depth24Stencil8;
 
+	const uint8 gamma = textureResource.m_Format == TextureFormat_t::SRGBA8
+		? GCM_TEXTURE_GAMMA_R | GCM_TEXTURE_GAMMA_G | GCM_TEXTURE_GAMMA_B
+		: 0;
+
 	rsxTextureWrapMode(
 		context,
 		slot,
@@ -1608,7 +1613,7 @@ void CGcmRenderer::SetTexture(
 		gcmWrapMode,
 		0,
 		isDepthTexture ? GCM_TEXTURE_ZFUNC_NEVER : textureResource.m_ZFunc,
-		0);
+		gamma);
 }
 
 void CGcmRenderer::SetTextureCompareMode(

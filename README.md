@@ -94,6 +94,7 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `RG8`
 - `RGB8`
 - `RGBA8`
+- `SRGBA8`
 - `R16F`
 - `RG16F`
 - `RGB16F`
