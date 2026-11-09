@@ -71,6 +71,7 @@ static void ConvertTexelToARGB8(
 
 			break;
 		case TextureFormat_t::RGBA8:
+		case TextureFormat_t::SRGBA8:
 			pDst[0] = pSrc[index * 4 + 3];
 			pDst[1] = pSrc[index * 4];
 			pDst[2] = pSrc[index * 4 + 1];
