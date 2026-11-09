@@ -16,8 +16,8 @@
 
 enum WindowBackend_t
 {
-	WindowBackendGlfw = 0,
-	WindowBackendPs3 = 1,
+	WindowBackendGLFW = 0,
+	WindowBackendPS3 = 1,
 	WindowBackendCount
 };
 

@@ -14,13 +14,13 @@
 #include "platform.h"
 #include <rsx/rsx.h>
 
-struct RsxAllocation_t
+struct RSXAllocation_t
 {
 	void* m_pPtr;
 	uint32 m_Offset;
 	uint32 m_Metadata;
 
-	RsxAllocation_t() :
+	RSXAllocation_t() :
 		m_pPtr(GCMGL_NULL),
 		m_Offset(0xffffffff),
 		m_Metadata(0xffffffff)
@@ -28,25 +28,25 @@ struct RsxAllocation_t
 	}
 };
 
-class CRsxHeap
+class CRSXHeap
 {
 public:
-	CRsxHeap() :
+	CRSXHeap() :
 		m_pBase(GCMGL_NULL),
 		m_pAllocator(GCMGL_NULL),
-		m_BaseRsxOffset(0)
+		m_BaseRSXOffset(0)
 	{
 	}
 
 	bool Init(uint32 size);
 	void Shutdown();
 
-	RsxAllocation_t Alloc(uint32 size, uint32 alignment);
-	void Free(RsxAllocation_t rsxAllocation);
+	RSXAllocation_t Alloc(uint32 size, uint32 alignment);
+	void Free(RSXAllocation_t rsxAllocation);
 private:
 	void* m_pBase;
 	void* m_pAllocator;
-	uint32 m_BaseRsxOffset;
+	uint32 m_BaseRSXOffset;
 };
 
 #endif // RSX_HEAP_H

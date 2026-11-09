@@ -27,7 +27,7 @@ extern "C"
 #define SPU_BATCH_STATUS_DONE 2u
 #define SPU_BATCH_STATUS_ERROR 3u
 
-struct SpuBatchTransformJob_t
+struct SPUBatchTransformJob_t
 {
 	uint64 m_SrcVerticesEffAddr;
 	uint64 m_SrcIndicesEffAddr;
@@ -47,7 +47,7 @@ struct SpuBatchTransformJob_t
 };
 
 #ifndef __cplusplus
-typedef struct SpuBatchTransformJob_t SpuBatchTransformJob_t;
+typedef struct SPUBatchTransformJob_t SPUBatchTransformJob_t;
 #endif // !__cplusplus
 
 #ifdef __cplusplus

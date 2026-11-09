@@ -322,7 +322,7 @@ int32 RunTexturedLitExample(
 
 	// Create uniform layout for MVP matrix
 	UniformBlockLayout_t mvpLayout;
-	mvpLayout.m_UniformNames.AddToTail("Mvp");
+	mvpLayout.m_UniformNames.AddToTail("MVP");
 	mvpLayout.m_Binding = 0;
 	mvpLayout.m_Size = sizeof(CMatrix4);
 	uint32 hMVPLayout = pRenderer->CreateUniformBlockLayout(mvpLayout);

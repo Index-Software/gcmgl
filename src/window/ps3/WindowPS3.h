@@ -6,19 +6,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef WINDOW_GLFW_H
-#define WINDOW_GLFW_H
+#ifndef WINDOW_PS3_H
+#define WINDOW_PS3_H
 
 #pragma once
 
 #include "../Window.h"
-#include <GLFW/glfw3.h>
+#include <sysutil/sysutil.h>
 
-class CWindowGlfw : public IWindow
+class CWindowPS3 : public IWindow
 {
 public:
-	CWindowGlfw();
-	virtual ~CWindowGlfw() GCMGL_OVERRIDE;
+	CWindowPS3();
+	virtual ~CWindowPS3() GCMGL_OVERRIDE;
 
 	virtual bool Init(const WindowConfig_t& windowConfig) GCMGL_OVERRIDE;
 	virtual void Shutdown() GCMGL_OVERRIDE;
@@ -32,9 +32,16 @@ public:
 		uint32& width,
 		uint32& height) const GCMGL_OVERRIDE;
 private:
-	GLFWwindow* m_pWindow;
+	bool m_IsRunning;
+	uint32 m_Width;
+	uint32 m_Height;
+
+	static void SysutilExitCallback(
+		u64 status,
+		u64 param,
+		void* pUserData);
 };
 
 void DestroyWindowInstance(IWindow* pWindow);
 
-#endif // WINDOW_GLFW_H
+#endif // WINDOW_PS3_H

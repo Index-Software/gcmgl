@@ -11,10 +11,10 @@
 
 #pragma once
 
-#include "renderer/gl/GlRenderer.h"
+#include "renderer/gl/GLRenderer.h"
 #include "renderer/BatchRenderer.h"
 
-class CGlBatchRenderer : public CGlRenderer, public CBatchRenderer
+class CGLBatchRenderer : public CGLRenderer, public CBatchRenderer
 {
 protected:
 	virtual void FrustumCullBatch(

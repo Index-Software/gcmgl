@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "GcmPostProcessingRenderer.h"
+#include "GCMPostProcessingRenderer.h"
 
 #include <rsx/rsx.h>
 #include <rsx/gcm_sys.h>
@@ -15,10 +15,10 @@
 #include "utils/Utils.h"
 #include "utils/UtlMemory.h"
 
-GcmPostProcessState_t CGcmPostProcessingRenderer::InitState(
-	CRsxHeap& staticHeap)
+GCMPostProcessState_t CGCMPostProcessingRenderer::InitState(
+	CRSXHeap& staticHeap)
 {
-	GcmPostProcessState_t state;
+	GCMPostProcessState_t state;
 	memset(&state, 0, sizeof(state));
 
 	CUtlVector<uint8> vertexProgramBinary = CUtils::ReadBinaryFile(
@@ -123,9 +123,9 @@ GcmPostProcessState_t CGcmPostProcessingRenderer::InitState(
 	return state;
 }
 
-void CGcmPostProcessingRenderer::ShutdownState(
-	GcmPostProcessState_t& state,
-	CRsxHeap& staticHeap)
+void CGCMPostProcessingRenderer::ShutdownState(
+	GCMPostProcessState_t& state,
+	CRSXHeap& staticHeap)
 {
 	if (state.m_pVertexProgramAligned)
 	{
@@ -161,7 +161,7 @@ void CGcmPostProcessingRenderer::ShutdownState(
 	state.m_pVertexProgram = GCMGL_NULL;
 }
 
-void CGcmPostProcessingRenderer::Begin(const GcmPostProcessState_t& state)
+void CGCMPostProcessingRenderer::Begin(const GCMPostProcessState_t& state)
 {
 	gcmSurface surface;
 	surface.colorFormat = GCM_SURFACE_X8R8G8B8;
@@ -191,7 +191,7 @@ void CGcmPostProcessingRenderer::Begin(const GcmPostProcessState_t& state)
 	rsxSetSurface(context, &surface);
 }
 
-void CGcmPostProcessingRenderer::End(const GcmPostProcessState_t& state)
+void CGCMPostProcessingRenderer::End(const GCMPostProcessState_t& state)
 {
 	rsxSetDepthTestEnable(context, GCM_FALSE);
 	rsxSetDepthWriteEnable(context, GCM_FALSE);

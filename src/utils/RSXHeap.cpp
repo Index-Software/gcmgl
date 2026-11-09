@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "RsxHeap.h"
+#include "RSXHeap.h"
 
 #include "OffsetAllocator/offsetAllocator.hpp"
 #include "utils/UtlMemory.h"
@@ -15,7 +15,7 @@
 
 static const uint32 NO_SPACE = 0xffffffff;
 
-bool CRsxHeap::Init(uint32 size)
+bool CRSXHeap::Init(uint32 size)
 {
 	m_pBase = rsxMemalign(128, size);
 	if (!m_pBase)
@@ -23,7 +23,7 @@ bool CRsxHeap::Init(uint32 size)
 		return false;
 	}
 
-	rsxAddressToOffset(m_pBase, &m_BaseRsxOffset);
+	rsxAddressToOffset(m_pBase, &m_BaseRSXOffset);
 
 	void* pMem = CUtlMemory::Alloc(sizeof(OffsetAllocator::Allocator));
 	if (!pMem)
@@ -39,7 +39,7 @@ bool CRsxHeap::Init(uint32 size)
 	return true;
 }
 
-void CRsxHeap::Shutdown()
+void CRSXHeap::Shutdown()
 {
 	if (m_pAllocator)
 	{
@@ -54,27 +54,27 @@ void CRsxHeap::Shutdown()
 	}
 }
 
-RsxAllocation_t CRsxHeap::Alloc(uint32 size, uint32 alignment)
+RSXAllocation_t CRSXHeap::Alloc(uint32 size, uint32 alignment)
 {
 	const uint32 alignedSize = (size + alignment - 1) & ~(alignment - 1);
 	OffsetAllocator::Allocator* pAlloc =
 		static_cast<OffsetAllocator::Allocator*>(m_pAllocator);
 	OffsetAllocator::Allocation allocation = pAlloc->allocate(alignedSize);
 
-	RsxAllocation_t rsxAllocation;
+	RSXAllocation_t rsxAllocation;
 	rsxAllocation.m_Metadata = allocation.metadata;
 	if (allocation.offset == NO_SPACE)
 	{
 		return rsxAllocation;
 	}
 
-	rsxAllocation.m_Offset = m_BaseRsxOffset + allocation.offset;
+	rsxAllocation.m_Offset = m_BaseRSXOffset + allocation.offset;
 	rsxAllocation.m_pPtr = reinterpret_cast<uint8*>(m_pBase) + allocation.offset;
 
 	return rsxAllocation;
 }
 
-void CRsxHeap::Free(RsxAllocation_t rsxAllocation)
+void CRSXHeap::Free(RSXAllocation_t rsxAllocation)
 {
 	if (rsxAllocation.m_pPtr == GCMGL_NULL)
 	{

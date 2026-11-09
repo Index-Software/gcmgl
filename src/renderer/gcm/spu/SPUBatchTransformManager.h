@@ -13,16 +13,16 @@
 
 #include <sys/spu.h>
 #include <sys/event_queue.h>
-#include "platform/ps3/spu/SpuCommon.h"
-#include "SpuBatchTransformJob.h"
+#include "platform/ps3/spu/SPUCommon.h"
+#include "SPUBatchTransformJob.h"
 
 struct BatchChunkTransform_t;
 
-class CSpuBatchTransformManager
+class CSPUBatchTransformManager
 {
 public:
-	CSpuBatchTransformManager();
-	~CSpuBatchTransformManager();
+	CSPUBatchTransformManager();
+	~CSPUBatchTransformManager();
 
 	bool Init();
 	void Shutdown();
@@ -41,12 +41,12 @@ public:
 		uint32 baseVertex);
 	SPUResult_t::Enum WaitBatch();
 private:
-	static const uint32 s_BatchTransformSpuCount = 2;
-	sysSpuImage m_SpuImage;
-	SpuBatchTransformJob_t* m_pBatchJobs[s_BatchTransformSpuCount];
-	sys_event_queue_t m_EventQueues[s_BatchTransformSpuCount];
-	uint32 m_SpuThreadIds[s_BatchTransformSpuCount];
-	uint32 m_SpuGroupId;
+	static const uint32 s_BatchTransformSPUCount = 2;
+	sysSpuImage m_SPUImage;
+	SPUBatchTransformJob_t* m_pBatchJobs[s_BatchTransformSPUCount];
+	sys_event_queue_t m_EventQueues[s_BatchTransformSPUCount];
+	uint32 m_SPUThreadIDs[s_BatchTransformSPUCount];
+	uint32 m_SPUGroupID;
 	bool m_IsShuttingDown;
 };
 

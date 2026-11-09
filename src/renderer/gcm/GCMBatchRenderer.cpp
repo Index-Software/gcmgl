@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "GcmBatchRenderer.h"
+#include "GCMBatchRenderer.h"
 #include "dbg.h"
 #include "mathsfury/Maths.h"
 #include "Main.h"
@@ -26,10 +26,10 @@
 #endif // SIMD_ENABLED
 
 #ifdef PS3_SPU_ENABLED
-#include "spu/SpuBatchTransformManager.h"
+#include "spu/SPUBatchTransformManager.h"
 #endif // PS3_SPU_ENABLED
 
-CGcmBatchRenderer::CGcmBatchRenderer()
+CGCMBatchRenderer::CGCMBatchRenderer()
 #ifdef PS3_SPU_ENABLED
 	:
 	m_HasPendingBatch(false)
@@ -37,23 +37,23 @@ CGcmBatchRenderer::CGcmBatchRenderer()
 {
 }
 
-CGcmBatchRenderer::~CGcmBatchRenderer()
+CGCMBatchRenderer::~CGCMBatchRenderer()
 {
 }
 
 #ifdef PS3_SPU_ENABLED
-void CGcmBatchRenderer::Shutdown()
+void CGCMBatchRenderer::Shutdown()
 {
 	FlushPendingBatches();
 
-	CGcmRenderer::Shutdown();
+	CGCMRenderer::Shutdown();
 }
 
-void CGcmBatchRenderer::EndFrame()
+void CGCMBatchRenderer::EndFrame()
 {
 	FlushPendingBatches();
 
-	CGcmRenderer::EndFrame();
+	CGCMRenderer::EndFrame();
 }
 #endif // PS3_SPU_ENABLED
 
@@ -140,19 +140,19 @@ static void FrustumCullThread(void* pArg)
 }
 
 #ifdef PS3_SPU_ENABLED
-void CGcmBatchRenderer::FlushPendingBatches()
+void CGCMBatchRenderer::FlushPendingBatches()
 {
 	if (!m_HasPendingBatch)
 	{
 		return;
 	}
 
-	if (m_pSpuBatchTransformManager)
+	if (m_pSPUBatchTransformManager)
 	{
 #ifdef GCMGL_DIAGNOSTICS
 		const uint64 waitStart = PerfTimer_Now();
 #endif // GCMGL_DIAGNOSTICS
-		m_pSpuBatchTransformManager->WaitBatch();
+		m_pSPUBatchTransformManager->WaitBatch();
 #ifdef GCMGL_DIAGNOSTICS
 		CNetPerfReporter::Add(
 			"spu_transform_wait_us",
@@ -299,7 +299,7 @@ static void BatchTransformsThread(void* pArg)
 }
 #endif // !PS3_SPU_ENABLED
 
-void CGcmBatchRenderer::FrustumCullBatch(
+void CGCMBatchRenderer::FrustumCullBatch(
 	const CBatch& batch,
 	const Plane_t* pFrustumPlanes,
 	CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
@@ -386,7 +386,7 @@ void CGcmBatchRenderer::FrustumCullBatch(
 				if (threadCreateResult != 0)
 				{
 					Warning(
-						"[CGcmBatchRenderer] Failed to create cull thread %d: %d\n",
+						"[CGCMBatchRenderer] Failed to create cull thread %d: %d\n",
 						j,
 						threadCreateResult);
 				}
@@ -485,7 +485,7 @@ void CGcmBatchRenderer::FrustumCullBatch(
 #endif // GCMGL_DIAGNOSTICS
 }
 
-void CGcmBatchRenderer::DrawBatched(
+void CGCMBatchRenderer::DrawBatched(
 	uint32 vertexCount,
 	const CBatch& batch,
 	const CMatrix4& viewProjection,
@@ -502,7 +502,7 @@ void CGcmBatchRenderer::DrawBatched(
 #endif // !PS3_SPU_ENABLED
 }
 
-void CGcmBatchRenderer::DrawIndexedBatched(
+void CGCMBatchRenderer::DrawIndexedBatched(
 	uint32 indexCount,
 	uint32 vertexCount,
 	const CBatch& batch,
@@ -525,7 +525,7 @@ void CGcmBatchRenderer::DrawIndexedBatched(
 #endif // !PS3_SPU_ENABLED
 }
 
-void CGcmBatchRenderer::DrawBatchedChunk(
+void CGCMBatchRenderer::DrawBatchedChunk(
 	uint32 vertexCount,
 	const CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
 	uint32 chunkStart,
@@ -560,7 +560,7 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 		if (!stagingVertexBuffer.m_pPtr)
 		{
 			Warning(
-				"[CGcmBatchRenderer] Staging heap out of memory for vertex buffer\n");
+				"[CGCMBatchRenderer] Staging heap out of memory for vertex buffer\n");
 
 			return;
 		}
@@ -578,12 +578,12 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 	const bool hasVertexPos = m_HasVertexPos;
 
 #if defined(PS3_SPU_ENABLED) && defined(GCMGL_SPU_BATCH_TRANSFORM_ENABLED)
-	if (hasVertexPos && m_pSpuBatchTransformManager)
+	if (hasVertexPos && m_pSPUBatchTransformManager)
 	{
 #ifdef GCMGL_DIAGNOSTICS
 		const uint64 spuBeginStart = PerfTimer_Now();
 #endif // GCMGL_DIAGNOSTICS
-		m_pSpuBatchTransformManager->BeginBatch(
+		m_pSPUBatchTransformManager->BeginBatch(
 			pSrcVertexData,
 			GCMGL_NULL,
 			&batchChunkTransforms[chunkStart],
@@ -660,7 +660,7 @@ void CGcmBatchRenderer::DrawBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[CGcmBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGCMBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
@@ -804,7 +804,7 @@ static void BatchIndexedTransformsThread(void* pArg)
 }
 #endif // !PS3_SPU_ENABLED
 
-void CGcmBatchRenderer::DrawIndexedBatchedChunk(
+void CGCMBatchRenderer::DrawIndexedBatchedChunk(
 	uint32 indexCount,
 	uint32 vertexCount,
 	const CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
@@ -854,7 +854,7 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 		if (!stagingVertexBuffer.m_pPtr)
 		{
 			Warning(
-				"[CGcmBatchRenderer] Staging heap out of memory for vertex buffer\n");
+				"[CGCMBatchRenderer] Staging heap out of memory for vertex buffer\n");
 
 			return;
 		}
@@ -881,7 +881,7 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 		if (!stagingIndexBuffer.m_pPtr)
 		{
 			Warning(
-				"[CGcmBatchRenderer] Staging heap out of memory for index buffer\n");
+				"[CGCMBatchRenderer] Staging heap out of memory for index buffer\n");
 
 			return;
 		}
@@ -900,12 +900,12 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 	const bool hasVertexPos = m_HasVertexPos;
 
 #if defined(PS3_SPU_ENABLED) && defined(GCMGL_SPU_BATCH_TRANSFORM_ENABLED)
-	if (hasVertexPos && m_pSpuBatchTransformManager)
+	if (hasVertexPos && m_pSPUBatchTransformManager)
 	{
 #ifdef GCMGL_DIAGNOSTICS
 		const uint64 spuBeginStart = PerfTimer_Now();
 #endif // GCMGL_DIAGNOSTICS
-		m_pSpuBatchTransformManager->BeginBatch(
+		m_pSPUBatchTransformManager->BeginBatch(
 			pSrcVertexData,
 			pSrcIndices,
 			&batchChunkTransforms[chunkStart],
@@ -988,7 +988,7 @@ void CGcmBatchRenderer::DrawIndexedBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[CGcmBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGCMBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
