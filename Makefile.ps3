@@ -15,9 +15,9 @@ INCLUDES := src include public thirdparty src/renderer/gcm/spu
 SPU_SRCDIR := src/renderer/gcm/spu
 SPU_BUILD_DIR := $(OBJDIR)/spu
 
-SPU_BATCH_TRANSFORM_JOB_ELF := $(SPU_BUILD_DIR)/SpuBatchTransformJob.elf
-SPU_BATCH_TRANSFORM_JOB_OBJ := $(OBJDIR)/SpuBatchTransformJob_spu.o
-SPU_BATCH_TRANSFORM_JOB_SRC := $(SPU_SRCDIR)/SpuBatchTransformJob.c
+SPU_BATCH_TRANSFORM_JOB_ELF := $(SPU_BUILD_DIR)/SPUBatchTransformJob.elf
+SPU_BATCH_TRANSFORM_JOB_OBJ := $(OBJDIR)/SPUBatchTransformJob_spu.o
+SPU_BATCH_TRANSFORM_JOB_SRC := $(SPU_SRCDIR)/SPUBatchTransformJob.c
 
 
 SPU_CC := $(PS3DEV)/spu/bin/spu-gcc
@@ -71,13 +71,13 @@ endif
 LIBS := -lgcm_sys -lrsx -llv2 -lsysutil -lsysmodule -lio -lm -lrt -lnet $(wildcard build/shaders/*.o)
 
 CFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CFILES := $(filter-out SpuBatchTransformJob.c, $(CFILES))
+CFILES := $(filter-out SPUBatchTransformJob.c, $(CFILES))
 CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-CPPFILES := $(filter-out GlRenderer.cpp GlBatchRenderer.cpp WindowGlfw.cpp offsetAllocatorTests.cpp offsetAllocator.cpp RsxHeap.cpp, $(CPPFILES))
+CPPFILES := $(filter-out GLRenderer.cpp GLBatchRenderer.cpp WindowGLFW.cpp offsetAllocatorTests.cpp offsetAllocator.cpp RSXHeap.cpp, $(CPPFILES))
 CPPFILES += $(EXAMPLE_SRC)
 
 # OffsetAllocator uses constexpr/member-init/rvalue-refs
-CXX11OFILES := $(OBJDIR)/offsetAllocator.o $(OBJDIR)/RsxHeap.o
+CXX11OFILES := $(OBJDIR)/offsetAllocator.o $(OBJDIR)/RSXHeap.o
 
 export OUTPUT := $(BUILD)/$(TARGET)
 export VPATH := $(SOURCES) $(EXAMPLE_DIR)
@@ -109,15 +109,15 @@ $(BUILDDIR)/offsetAllocator.o: offsetAllocator.cpp | $(OBJDIR)
 	@echo $(notdir $<)
 	@$(CXX) -MD -MP -MF $(BUILDDIR)/offsetAllocator.d $(filter-out -std=c++98,$(CXXFLAGS)) -std=c++11 -c $< -o $@
 
-$(BUILDDIR)/RsxHeap.o: RsxHeap.cpp | $(OBJDIR)
+$(BUILDDIR)/RSXHeap.o: RSXHeap.cpp | $(OBJDIR)
 	@echo $(notdir $<)
-	@$(CXX) -MD -MP -MF $(BUILDDIR)/RsxHeap.d $(filter-out -std=c++98,$(CXXFLAGS)) -std=c++11 -c $< -o $@
+	@$(CXX) -MD -MP -MF $(BUILDDIR)/RSXHeap.d $(filter-out -std=c++98,$(CXXFLAGS)) -std=c++11 -c $< -o $@
 
 $(BUILDDIR)/%.o: %.c | $(OBJDIR)
 	@echo $(notdir $<)
 	@$(CC) -MD -MP -MF $(BUILDDIR)/$*.d $(CFLAGS) -c $< -o $@
 
-$(SPU_BATCH_TRANSFORM_JOB_ELF): $(SPU_BATCH_TRANSFORM_JOB_SRC) $(SPU_SRCDIR)/SpuBatchTransformJob.h | $(SPU_BUILD_DIR)
+$(SPU_BATCH_TRANSFORM_JOB_ELF): $(SPU_BATCH_TRANSFORM_JOB_SRC) $(SPU_SRCDIR)/SPUBatchTransformJob.h | $(SPU_BUILD_DIR)
 	@echo Building $(notdir $@)
 	@$(SPU_CC) $(SPU_CFLAGS) -o $@ $(SPU_BATCH_TRANSFORM_JOB_SRC) -L/usr/local/ps3dev/spu/lib -lsputhread
 

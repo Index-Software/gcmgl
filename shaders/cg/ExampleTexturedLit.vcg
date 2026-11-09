@@ -29,7 +29,7 @@ VertexOutput_t main(
     float3 normal : NORMAL,
     float4 color : COLOR0,
 
-    uniform float4x4 Mvp,
+    uniform float4x4 MVP,
     uniform float4x4 Model)
 {
     VertexOutput_t output;
@@ -40,7 +40,7 @@ VertexOutput_t main(
 
     output.texCoord = texCoord;
     output.color = color.rgb;
-    output.position = mul(Mvp, float4(position, 1.0));
+    output.position = mul(MVP, float4(position, 1.0));
 
     return output;
 }

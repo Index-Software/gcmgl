@@ -12,8 +12,8 @@
 #pragma once
 
 #include "renderer/Renderer.h"
-#include "renderer/gcm/GcmPostProcessingRenderer.h"
-#include "utils/RsxHeap.h"
+#include "renderer/gcm/GCMPostProcessingRenderer.h"
+#include "utils/RSXHeap.h"
 #include "rsxutil/rsxutil.h"
 #include <rsx/rsx.h>
 #include <rsx/gcm_sys.h>
@@ -21,14 +21,14 @@
 #include <rsx/rsx_program.h>
 
 #ifdef PS3_SPU_ENABLED
-class CSpuBatchTransformManager;
+class CSPUBatchTransformManager;
 #endif // PS3_SPU_ENABLED
 
-class CGcmRenderer : public virtual CRenderer
+class CGCMRenderer : public virtual CRenderer
 {
 public:
-	CGcmRenderer();
-	virtual ~CGcmRenderer() GCMGL_OVERRIDE;
+	CGCMRenderer();
+	virtual ~CGCMRenderer() GCMGL_OVERRIDE;
 
 	virtual bool Init(const RendererDesc_t& rendererDesc) GCMGL_OVERRIDE;
 	virtual void Shutdown() GCMGL_OVERRIDE;
@@ -196,7 +196,7 @@ protected:
 		void* m_pPtr;
 		uint32 m_Offset;
 		uint32 m_Size;
-		RsxAllocation_t m_Alloc;
+		RSXAllocation_t m_Alloc;
 	};
 
 	void FreeBufferMemory(BufferResource_t& bufferResource);
@@ -213,7 +213,7 @@ protected:
 		void* m_pPtr;
 		uint32 m_Size;
 		BufferHandle m_hBuffer;
-		RsxAllocation_t m_Alloc;
+		RSXAllocation_t m_Alloc;
 	};
 
 	static const int32 s_MaxInstanceStagingBuffers = 16;
@@ -224,8 +224,8 @@ protected:
 
 	static const uint32 s_StaticHeapSize = 96 * 1024 * 1024;
 	static const uint32 s_DynamicHeapSize = 16 * 1024 * 1024;
-	CRsxHeap m_StaticHeap;
-	CRsxHeap m_DynamicHeap;
+	CRSXHeap m_StaticHeap;
+	CRSXHeap m_DynamicHeap;
 
 	struct InstanceCache_t
 	{
@@ -238,7 +238,7 @@ protected:
 	CUtlVector<InstanceCache_t> m_InstanceCache;
 
 #ifdef PS3_SPU_ENABLED
-	CSpuBatchTransformManager* m_pSpuBatchTransformManager;
+	CSPUBatchTransformManager* m_pSPUBatchTransformManager;
 #endif // PS3_SPU_ENABLED
 	int32 m_InstanceBufferIndex;
 	int32 m_StagingIndex;
@@ -250,7 +250,7 @@ protected:
 
 	void InvalidateCachesIfDirty();
 
-	GcmPostProcessState_t m_PostProcessState;
+	GCMPostProcessState_t m_PostProcessState;
 private:
 	struct ProgramResource_t
 	{
@@ -265,15 +265,15 @@ private:
 		uint32 m_VertexProgramSize;
 		uint32 m_FragmentProgramOffset;
 		uint32 m_FragmentProgramSize;
-		RsxAllocation_t m_FragmentProgramAlloc;
-		RsxAllocation_t m_FragmentProgramBufferAlloc;
+		RSXAllocation_t m_FragmentProgramAlloc;
+		RSXAllocation_t m_FragmentProgramBufferAlloc;
 	};
 
 	CUtlMap<ShaderProgramHandle, ProgramResource_t> m_ProgramResources;
 
 	struct TextureResource_t
 	{
-		RsxAllocation_t m_Alloc;
+		RSXAllocation_t m_Alloc;
 		void* m_pBuffer;
 		uint32 m_Offset;
 		uint32 m_Width;

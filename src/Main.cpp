@@ -19,7 +19,7 @@
 
 #ifdef PLATFORM_PS3
 #include "rsxutil/rsxutil.h"
-#include "renderer/gcm/GcmRenderer.h"
+#include "renderer/gcm/GCMRenderer.h"
 #endif // PLATFORM_PS3
 
 #ifdef EXAMPLE_TRIANGLE
@@ -53,9 +53,9 @@ int main(int argc, char* argv[])
 
 	CWindowManager windowManager;
 #ifdef PLATFORM_PS3
-	if (!windowManager.Start(WindowBackendPs3, windowConfig))
+	if (!windowManager.Start(WindowBackendPS3, windowConfig))
 #else // PLATFORM_PS3
-	if (!windowManager.Start(WindowBackendGlfw, windowConfig))
+	if (!windowManager.Start(WindowBackendGLFW, windowConfig))
 #endif // !PLATFORM_PS3
 	{
 		Error("[Main] Failed to start window manager\n");

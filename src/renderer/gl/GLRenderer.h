@@ -16,11 +16,11 @@
 
 struct GLFWwindow;
 
-class CGlRenderer : public virtual CRenderer
+class CGLRenderer : public virtual CRenderer
 {
 public:
-	CGlRenderer();
-	virtual ~CGlRenderer() GCMGL_OVERRIDE;
+	CGLRenderer();
+	virtual ~CGLRenderer() GCMGL_OVERRIDE;
 
 	virtual bool Init(const RendererDesc_t& rendererDesc) GCMGL_OVERRIDE;
 	virtual void Shutdown() GCMGL_OVERRIDE;
@@ -181,7 +181,7 @@ protected:
 	{
 		uint64 m_Size;
 		void* m_pPtr;
-		uint32 m_hId;
+		uint32 m_hID;
 		uint32 m_Target;
 		bool m_IsAligned;
 		bool m_IsDirty;
@@ -190,19 +190,19 @@ protected:
 	struct StagingBuffer_t
 	{
 		StagingBuffer_t() :
-			m_hId(0),
+			m_hID(0),
 			m_hBuffer(0)
 		{
 		}
 
 		CUtlVector<uint8> m_Data;
-		uint32 m_hId;
+		uint32 m_hID;
 		BufferHandle m_hBuffer;
 	};
 
 	struct ProgramResource_t
 	{
-		uint32 m_hId;
+		uint32 m_hID;
 		CUtlMap<CFixedString, int32> m_AttributeLocations;
 		CUtlMap<CFixedString, int32> m_UniformBindingMap;
 		CUtlMap<uint32, int32> m_UniformBlockIndices;
@@ -221,7 +221,7 @@ protected:
 private:
 	struct TextureResource_t
 	{
-		uint32 m_hId;
+		uint32 m_hID;
 		uint32 m_Target;
 		uint32 m_Width;
 		uint32 m_Height;

@@ -13,10 +13,10 @@
 
 #include "platform.h"
 
-class CSpuUtils
+class CSPUUtils
 {
 public:
-	static INLINE uint64 PtrToEa(const void* pPtr)
+	static INLINE uint64 PtrToEA(const void* pPtr)
 	{
 		return static_cast<uint64>(reinterpret_cast<uintptr_t>(pPtr));
 	}

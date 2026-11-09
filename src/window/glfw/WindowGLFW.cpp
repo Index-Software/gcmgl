@@ -6,25 +6,25 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "WindowGlfw.h"
+#include "WindowGLFW.h"
 #include "dbg.h"
 #include "utils/UtlMemory.h"
 
-CWindowGlfw::CWindowGlfw() :
+CWindowGLFW::CWindowGLFW() :
 	m_pWindow(GCMGL_NULL)
 {
 }
 
-CWindowGlfw::~CWindowGlfw()
+CWindowGLFW::~CWindowGLFW()
 {
 	Shutdown();
 }
 
-bool CWindowGlfw::Init(const WindowConfig_t& windowConfig)
+bool CWindowGLFW::Init(const WindowConfig_t& windowConfig)
 {
 	if (!glfwInit())
 	{
-		Error("[CWindowGlfw] Failed to initialize GLFW\n");
+		Error("[CWindowGLFW] Failed to initialize GLFW\n");
 		
 		return false;
 	}
@@ -42,7 +42,7 @@ bool CWindowGlfw::Init(const WindowConfig_t& windowConfig)
 		GCMGL_NULL);
 	if (m_pWindow == GCMGL_NULL)
 	{
-		Error("[CWindowGlfw] Failed to create OpenGL 3.2 context\n");
+		Error("[CWindowGLFW] Failed to create OpenGL 3.2 context\n");
 
 		return false;
 	}
@@ -52,7 +52,7 @@ bool CWindowGlfw::Init(const WindowConfig_t& windowConfig)
 	return true;
 }
 
-void CWindowGlfw::Shutdown()
+void CWindowGLFW::Shutdown()
 {
 	if (m_pWindow != GCMGL_NULL)
 	{
@@ -63,12 +63,12 @@ void CWindowGlfw::Shutdown()
 	glfwTerminate();
 }
 
-void CWindowGlfw::PollEvents()
+void CWindowGLFW::PollEvents()
 {
 	glfwPollEvents();
 }
 
-void CWindowGlfw::MakeContextCurrent()
+void CWindowGLFW::MakeContextCurrent()
 {
 	if (m_pWindow != GCMGL_NULL)
 	{
@@ -76,7 +76,7 @@ void CWindowGlfw::MakeContextCurrent()
 	}
 }
 
-bool CWindowGlfw::ShouldClose()
+bool CWindowGLFW::ShouldClose()
 {
 	if (m_pWindow == GCMGL_NULL)
 	{
@@ -86,12 +86,12 @@ bool CWindowGlfw::ShouldClose()
 	return glfwWindowShouldClose(m_pWindow) != 0;
 }
 
-void* CWindowGlfw::GetNativeHandle()
+void* CWindowGLFW::GetNativeHandle()
 {
 	return reinterpret_cast<void*>(m_pWindow);
 }
 
-void CWindowGlfw::GetSize(uint32& width, uint32& height) const
+void CWindowGLFW::GetSize(uint32& width, uint32& height) const
 {
 	int w = 0;
 	int h = 0;
@@ -103,7 +103,7 @@ void CWindowGlfw::GetSize(uint32& width, uint32& height) const
 	height = static_cast<uint32>(h);
 }
 
-void CWindowGlfw::GetFramebufferSize(uint32& width, uint32& height) const
+void CWindowGLFW::GetFramebufferSize(uint32& width, uint32& height) const
 {
 	int w = 0;
 	int h = 0;
@@ -117,10 +117,10 @@ void CWindowGlfw::GetFramebufferSize(uint32& width, uint32& height) const
 
 IWindow* CreateWindowInstance()
 {
-	void* pMemory = CUtlMemory::Alloc(sizeof(CWindowGlfw));
+	void* pMemory = CUtlMemory::Alloc(sizeof(CWindowGLFW));
 	if (pMemory)
 	{
-		return new(pMemory) CWindowGlfw();
+		return new(pMemory) CWindowGLFW();
 	}
 
 	return GCMGL_NULL;

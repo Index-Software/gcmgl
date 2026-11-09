@@ -13,9 +13,9 @@
 
 #include <rsx/rsx.h>
 #include "platform.h"
-#include "utils/RsxHeap.h"
+#include "utils/RSXHeap.h"
 
-struct GcmPostProcessState_t
+struct GCMPostProcessState_t
 {
 	uint32 m_FragmentProgramOffset;
 	uint32 m_OffscreenColorOffset;
@@ -30,22 +30,22 @@ struct GcmPostProcessState_t
 	void* m_pQuadVertices;
 	const rsxVertexProgram* m_pVertexProgram;
 	const rsxFragmentProgram* m_pFragmentProgram;
-	RsxAllocation_t m_FragmentProgramAlloc;
-	RsxAllocation_t m_FragmentProgramBufferAlloc;
-	RsxAllocation_t m_OffscreenColorAlloc;
-	RsxAllocation_t m_OffscreenDepthAlloc;
-	RsxAllocation_t m_QuadVerticesAlloc;
+	RSXAllocation_t m_FragmentProgramAlloc;
+	RSXAllocation_t m_FragmentProgramBufferAlloc;
+	RSXAllocation_t m_OffscreenColorAlloc;
+	RSXAllocation_t m_OffscreenDepthAlloc;
+	RSXAllocation_t m_QuadVerticesAlloc;
 };
 
-class CGcmPostProcessingRenderer
+class CGCMPostProcessingRenderer
 {
 public:
-	static GcmPostProcessState_t InitState(CRsxHeap& staticHeap);
+	static GCMPostProcessState_t InitState(CRSXHeap& staticHeap);
 	static void ShutdownState(
-		GcmPostProcessState_t& state,
-		CRsxHeap& staticHeap);
-	static void Begin(const GcmPostProcessState_t& state);
-	static void End(const GcmPostProcessState_t& state);
+		GCMPostProcessState_t& state,
+		CRSXHeap& staticHeap);
+	static void Begin(const GCMPostProcessState_t& state);
+	static void End(const GCMPostProcessState_t& state);
 };
 
 #endif // GCM_POST_PROCESSING_RENDERER_H

@@ -11,8 +11,8 @@
 #include <spu_intrinsics.h>
 #include <spu_mfcio.h>
 #include <sys/spu_event.h>
-#include "SpuBatchTransformJob.h"
-#include "SpuUtils.h"
+#include "SPUBatchTransformJob.h"
+#include "SPUUtils.h"
 
 #define JOB_TAG 0u
 #define SRC_TAG0 1u
@@ -34,7 +34,7 @@ static uint8 s_DstBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
 static uint8 s_SrcBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
 static uint8 s_IndexSrcBuffer[2][SPU_BUFFER_SIZE] ALIGN128;
 static vec_float4 s_TransformBuffer[2][3] ALIGN128;
-static SpuBatchTransformJob_t s_Job ALIGN128;
+static SPUBatchTransformJob_t s_Job ALIGN128;
 
 // Flushes the current block and flips the buffer index
 static inline void flushDstBlock(
@@ -578,7 +578,7 @@ int main(uint64 jobEffAddr, uint64 arg1, uint64 arg2, uint64 arg3)
 		mfc_get(
 			&s_Job,
 			jobEffAddr,
-			sizeof(SpuBatchTransformJob_t),
+			sizeof(SPUBatchTransformJob_t),
 			JOB_TAG,
 			0,
 			0);
@@ -592,7 +592,7 @@ int main(uint64 jobEffAddr, uint64 arg1, uint64 arg2, uint64 arg3)
 			mfc_put(
 				&s_Job,
 				jobEffAddr,
-				sizeof(SpuBatchTransformJob_t),
+				sizeof(SPUBatchTransformJob_t),
 				JOB_TAG,
 				0,
 				0);
@@ -626,7 +626,7 @@ int main(uint64 jobEffAddr, uint64 arg1, uint64 arg2, uint64 arg3)
 		mfc_put(
 			&s_Job,
 			jobEffAddr,
-			sizeof(SpuBatchTransformJob_t),
+			sizeof(SPUBatchTransformJob_t),
 			JOB_TAG,
 			0,
 			0);

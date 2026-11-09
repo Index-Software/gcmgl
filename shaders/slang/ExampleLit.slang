@@ -8,7 +8,7 @@
 
 [vk::binding(0, 0)] cbuffer Uniforms
 {
-    float4x4 Mvp;
+    float4x4 MVP;
 };
 [vk::binding(2, 0)] cbuffer ModelData
 {
@@ -39,7 +39,7 @@ VertexOutput_t vertMain(VertexInput_t input)
     output.worldPos = worldPos.xyz;
     output.normal = normalize(mul(input.normal, (float3x3)Model));
     output.color = input.color.rgb;
-    output.position = mul(float4(input.position, 1.0), Mvp);
+    output.position = mul(float4(input.position, 1.0), MVP);
 
     return output;
 }

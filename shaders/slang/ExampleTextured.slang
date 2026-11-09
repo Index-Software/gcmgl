@@ -8,7 +8,7 @@
 
 [vk::binding(0, 0)] cbuffer Uniforms
 {
-    float4x4 Mvp;
+    float4x4 MVP;
 };
 
 struct VertexInput_t
@@ -27,7 +27,7 @@ struct VertexOutput_t
 VertexOutput_t vertMain(VertexInput_t input)
 {
     VertexOutput_t output;
-    output.position = mul(float4(input.position, 1.0), Mvp);
+    output.position = mul(float4(input.position, 1.0), MVP);
     output.texCoord = input.texCoord;
 
     return output;

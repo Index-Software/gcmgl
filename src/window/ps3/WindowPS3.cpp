@@ -6,30 +6,30 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "WindowPs3.h"
+#include "WindowPS3.h"
 #include "dbg.h"
 #include "utils/UtlMemory.h"
 #include <sys/process.h>
 #include <sysutil/video.h>
 #include <io/pad.h>
 
-CWindowPs3::CWindowPs3() :
+CWindowPS3::CWindowPS3() :
 	m_IsRunning(false),
 	m_Width(0),
 	m_Height(0)
 {
 }
 
-CWindowPs3::~CWindowPs3()
+CWindowPS3::~CWindowPS3()
 {
 	Shutdown();
 }
 
-bool CWindowPs3::Init(const WindowConfig_t& windowConfig)
+bool CWindowPS3::Init(const WindowConfig_t& windowConfig)
 {
 	if (ioPadInit(7) != 0)
 	{
-		Error("[CWindowPs3] Failed to initialize pad system\n");
+		Error("[CWindowPS3] Failed to initialize pad system\n");
 		
 		return false;
 	}
@@ -44,7 +44,7 @@ bool CWindowPs3::Init(const WindowConfig_t& windowConfig)
 	return true;
 }
 
-void CWindowPs3::Shutdown()
+void CWindowPS3::Shutdown()
 {
 	m_IsRunning = false;
 
@@ -52,46 +52,46 @@ void CWindowPs3::Shutdown()
 	ioPadEnd();
 }
 
-void CWindowPs3::PollEvents()
+void CWindowPS3::PollEvents()
 {
 	sysUtilCheckCallback();
 }
 
-void CWindowPs3::MakeContextCurrent()
+void CWindowPS3::MakeContextCurrent()
 {
 	Msg("MakeContextCurrent() is a stub\n");
 }
 
-bool CWindowPs3::ShouldClose()
+bool CWindowPS3::ShouldClose()
 {
 	return !m_IsRunning;
 }
 
-void* CWindowPs3::GetNativeHandle()
+void* CWindowPS3::GetNativeHandle()
 {
 	Msg("GetNativeHandle() is a stub\n");
 
 	return GCMGL_NULL;
 }
 
-void CWindowPs3::GetSize(uint32& width, uint32& height) const
+void CWindowPS3::GetSize(uint32& width, uint32& height) const
 {
 	width = m_Width;
 	height = m_Height;
 }
 
-void CWindowPs3::GetFramebufferSize(uint32& width, uint32& height) const
+void CWindowPS3::GetFramebufferSize(uint32& width, uint32& height) const
 {
 	width = m_Width;
 	height = m_Height;
 }
 
-void CWindowPs3::SysutilExitCallback(
+void CWindowPS3::SysutilExitCallback(
 	u64 status,
 	u64 param,
 	void* pUserData)
 {
-	CWindowPs3* pWindow = reinterpret_cast<CWindowPs3*>(pUserData);
+	CWindowPS3* pWindow = reinterpret_cast<CWindowPS3*>(pUserData);
 	Msg(
 		"SysutilExitCallback triggered with status=0x%lx, param=0x%lx\n",
 		status,
@@ -123,7 +123,7 @@ void CWindowPs3::SysutilExitCallback(
 		}
 		default:
 		{
-			Warning("[CWindowPs3] Unknown status received: 0x%lx\n", status);
+			Warning("[CWindowPS3] Unknown status received: 0x%lx\n", status);
 
 			break;
 		}
@@ -132,10 +132,10 @@ void CWindowPs3::SysutilExitCallback(
 
 IWindow* CreateWindowInstance()
 {
-	void* pMemory = CUtlMemory::Alloc(sizeof(CWindowPs3));
+	void* pMemory = CUtlMemory::Alloc(sizeof(CWindowPS3));
 	if (pMemory)
 	{
-		return new(pMemory) CWindowPs3();
+		return new(pMemory) CWindowPS3();
 	}
 
 	return GCMGL_NULL;

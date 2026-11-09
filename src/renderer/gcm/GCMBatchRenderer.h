@@ -11,14 +11,14 @@
 
 #pragma once
 
-#include "renderer/gcm/GcmRenderer.h"
+#include "renderer/gcm/GCMRenderer.h"
 #include "renderer/BatchRenderer.h"
 
-class CGcmBatchRenderer : public CGcmRenderer, public CBatchRenderer
+class CGCMBatchRenderer : public CGCMRenderer, public CBatchRenderer
 {
 public:
-	CGcmBatchRenderer();
-	virtual ~CGcmBatchRenderer();
+	CGCMBatchRenderer();
+	virtual ~CGCMBatchRenderer();
 
 #ifdef PS3_SPU_ENABLED
 	virtual void EndFrame() GCMGL_OVERRIDE;

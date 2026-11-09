@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "GlBatchRenderer.h"
+#include "GLBatchRenderer.h"
 #include "dbg.h"
 #include "mathsfury/Maths.h"
 #include <glad/gl.h>
@@ -180,7 +180,7 @@ static void* FrustumCullThread(void* pArg)
 	return GCMGL_NULL;
 }
 
-void CGlBatchRenderer::FrustumCullBatch(
+void CGLBatchRenderer::FrustumCullBatch(
 	const CBatch& batch,
 	const Plane_t* pFrustumPlanes,
 	CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
@@ -259,7 +259,7 @@ void CGlBatchRenderer::FrustumCullBatch(
 				if (threadCreateResult != 0)
 				{
 					Warning(
-						"[CGlBatchRenderer] Failed to create thread %d: %d\n",
+						"[CGLBatchRenderer] Failed to create thread %d: %d\n",
 						j,
 						threadCreateResult);
 				}
@@ -348,7 +348,7 @@ void CGlBatchRenderer::FrustumCullBatch(
 	}
 }
 
-void CGlBatchRenderer::DrawBatchedChunk(
+void CGLBatchRenderer::DrawBatchedChunk(
 	uint32 vertexCount,
 	const CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
 	uint32 chunkStart,
@@ -380,7 +380,7 @@ void CGlBatchRenderer::DrawBatchedChunk(
 		const BufferResource_t stagingVertexBufferResource = {
 			uint64(stagingVertexBuffer.m_Data.Count()),
 			stagingVertexBuffer.m_Data.Base(),
-			stagingVertexBuffer.m_hId,
+			stagingVertexBuffer.m_hID,
 			GL_ARRAY_BUFFER,
 			false
 		};
@@ -435,7 +435,7 @@ void CGlBatchRenderer::DrawBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[CGlBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGLBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
@@ -471,12 +471,12 @@ void CGlBatchRenderer::DrawBatchedChunk(
 	}
 #endif // !THREADING_ENABLED
 
-	if (stagingVertexBuffer.m_hId == 0)
+	if (stagingVertexBuffer.m_hID == 0)
 	{
-		glGenBuffers(1, &stagingVertexBuffer.m_hId);
+		glGenBuffers(1, &stagingVertexBuffer.m_hID);
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, stagingVertexBuffer.m_hId);
+	glBindBuffer(GL_ARRAY_BUFFER, stagingVertexBuffer.m_hID);
 	glBufferData(
 		GL_ARRAY_BUFFER,
 		static_cast<GLsizeiptr>(totalVertexDataSize),
@@ -486,7 +486,7 @@ void CGlBatchRenderer::DrawBatchedChunk(
 	const BufferResource_t stagingVertexBufferResource = {
 		uint64(totalVertexDataSize),
 		stagingVertexBuffer.m_Data.Base(),
-		stagingVertexBuffer.m_hId,
+		stagingVertexBuffer.m_hID,
 		GL_ARRAY_BUFFER,
 		false
 	};
@@ -550,7 +550,7 @@ static void* BatchIndexedTransforms(void* pArg)
 	return GCMGL_NULL;
 }
 
-void CGlBatchRenderer::DrawIndexedBatchedChunk(
+void CGLBatchRenderer::DrawIndexedBatchedChunk(
 	uint32 indexCount,
 	uint32 vertexCount,
 	const CUtlVector<BatchChunkTransform_t>& batchChunkTransforms,
@@ -596,7 +596,7 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 		const BufferResource_t stagingVertexBufferResource = {
 			uint64(stagingVertexBuffer.m_Data.Count()),
 			stagingVertexBuffer.m_Data.Base(),
-			stagingVertexBuffer.m_hId,
+			stagingVertexBuffer.m_hID,
 			GL_ARRAY_BUFFER,
 			false
 		};
@@ -620,7 +620,7 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 		const BufferResource_t stagingIndexBufferResource = {
 			uint64(stagingIndexBuffer.m_Data.Count()),
 			stagingIndexBuffer.m_Data.Base(),
-			stagingIndexBuffer.m_hId,
+			stagingIndexBuffer.m_hID,
 			GL_ELEMENT_ARRAY_BUFFER,
 			false
 		};
@@ -675,7 +675,7 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 			if (threadCreateResult != 0)
 			{
 				Warning(
-					"[CGlBatchRenderer] Failed to create thread %d: %d\n",
+					"[CGLBatchRenderer] Failed to create thread %d: %d\n",
 					i,
 					threadCreateResult);
 			}
@@ -718,24 +718,24 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 	}
 #endif // !THREADING_ENABLED
 
-	if (stagingVertexBuffer.m_hId == 0)
+	if (stagingVertexBuffer.m_hID == 0)
 	{
-		glGenBuffers(1, &stagingVertexBuffer.m_hId);
+		glGenBuffers(1, &stagingVertexBuffer.m_hID);
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, stagingVertexBuffer.m_hId);
+	glBindBuffer(GL_ARRAY_BUFFER, stagingVertexBuffer.m_hID);
 	glBufferData(
 		GL_ARRAY_BUFFER,
 		static_cast<GLsizeiptr>(totalVertexDataSize),
 		stagingVertexBuffer.m_Data.Base(),
 		GL_STREAM_DRAW);
 
-	if (stagingIndexBuffer.m_hId == 0)
+	if (stagingIndexBuffer.m_hID == 0)
 	{
-		glGenBuffers(1, &stagingIndexBuffer.m_hId);
+		glGenBuffers(1, &stagingIndexBuffer.m_hID);
 	}
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, stagingIndexBuffer.m_hId);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, stagingIndexBuffer.m_hID);
 	glBufferData(
 		GL_ELEMENT_ARRAY_BUFFER,
 		static_cast<GLsizeiptr>(totalIndexDataSize),
@@ -745,7 +745,7 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 	const BufferResource_t stagingVertexBufferResource = {
 		totalVertexDataSize,
 		stagingVertexBuffer.m_Data.Base(),
-		stagingVertexBuffer.m_hId,
+		stagingVertexBuffer.m_hID,
 		GL_ARRAY_BUFFER,
 		false
 	};
@@ -756,7 +756,7 @@ void CGlBatchRenderer::DrawIndexedBatchedChunk(
 	const BufferResource_t stagingIndexBufferResource = {
 		totalIndexDataSize,
 		stagingIndexBuffer.m_Data.Base(),
-		stagingIndexBuffer.m_hId,
+		stagingIndexBuffer.m_hID,
 		GL_ELEMENT_ARRAY_BUFFER,
 		false
 	};

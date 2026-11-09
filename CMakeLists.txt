@@ -91,20 +91,20 @@ if(BUILD_PS3)
 	list(APPEND ENGINE_SRCS
 		thirdparty/rsxutil/rsxutil.cpp
 		thirdparty/OffsetAllocator/offsetAllocator.cpp
-		src/utils/RsxHeap.cpp
+		src/utils/RSXHeap.cpp
 		src/renderer/PostProcessingRenderer.cpp
-		src/renderer/gcm/GcmPostProcessingRenderer.cpp
-		src/renderer/gcm/GcmRenderer.cpp
-		src/renderer/gcm/GcmBatchRenderer.cpp
-		src/renderer/gcm/spu/SpuBatchTransformManager.cpp
-		src/window/ps3/WindowPs3.cpp
+		src/renderer/gcm/GCMPostProcessingRenderer.cpp
+		src/renderer/gcm/GCMRenderer.cpp
+		src/renderer/gcm/GCMBatchRenderer.cpp
+		src/renderer/gcm/spu/SPUBatchTransformManager.cpp
+		src/window/ps3/WindowPS3.cpp
 	)
 
 	add_library(engine STATIC ${ENGINE_SRCS})
 
 	set_source_files_properties(
 		thirdparty/OffsetAllocator/offsetAllocator.cpp
-		src/utils/RsxHeap.cpp
+		src/utils/RSXHeap.cpp
 		PROPERTIES COMPILE_FLAGS "-std=c++11"
 	)
 
@@ -163,9 +163,9 @@ else()
 	add_definitions(-DGCMGL_DIAGNOSTICS)
 
 	list(APPEND ENGINE_SRCS
-		src/renderer/gl/GlRenderer.cpp
-		src/renderer/gl/GlBatchRenderer.cpp
-		src/window/glfw/WindowGlfw.cpp
+		src/renderer/gl/GLRenderer.cpp
+		src/renderer/gl/GLBatchRenderer.cpp
+		src/window/glfw/WindowGLFW.cpp
 	)
 
 	add_library(engine STATIC ${ENGINE_SRCS})

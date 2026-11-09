@@ -10,7 +10,7 @@
 #include "dbg.h"
 
 CWindowManager::CWindowManager() :
-	m_WindowBackend(WindowBackendGlfw),
+	m_WindowBackend(WindowBackendGLFW),
 	m_pWindow(GCMGL_NULL)
 {
 }

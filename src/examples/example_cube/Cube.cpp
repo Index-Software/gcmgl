@@ -117,7 +117,7 @@ int32 RunCubeExample(
 
 	// Create uniform layout for MVP matrix
 	UniformBlockLayout_t uniformLayout;
-	uniformLayout.m_UniformNames.AddToTail("Mvp");
+	uniformLayout.m_UniformNames.AddToTail("MVP");
 	uniformLayout.m_Binding = 0;
 	uniformLayout.m_Size = sizeof(CMatrix4);
 	uint32 hMVPLayout = pRenderer->CreateUniformBlockLayout(uniformLayout);
