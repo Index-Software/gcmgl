@@ -14,10 +14,11 @@
 #include <stdlib.h>
 
 static const uint32 NO_SPACE = 0xffffffff;
+static const uint32 s_MaxAlignment = 128;
 
 bool CRSXHeap::Init(uint32 size)
 {
-	m_pBase = rsxMemalign(128, size);
+	m_pBase = rsxMemalign(s_MaxAlignment, size);
 	if (!m_pBase)
 	{
 		return false;
@@ -56,12 +57,18 @@ void CRSXHeap::Shutdown()
 
 RSXAllocation_t CRSXHeap::Alloc(uint32 size, uint32 alignment)
 {
-	const uint32 alignedSize = (size + alignment - 1) & ~(alignment - 1);
+	RSXAllocation_t rsxAllocation;
+	if (alignment > s_MaxAlignment)
+	{
+		return rsxAllocation;
+	}
+
+	const uint32 alignedSize =
+		(size + s_MaxAlignment - 1) & ~(s_MaxAlignment - 1);
 	OffsetAllocator::Allocator* pAlloc =
 		static_cast<OffsetAllocator::Allocator*>(m_pAllocator);
 	OffsetAllocator::Allocation allocation = pAlloc->allocate(alignedSize);
 
-	RSXAllocation_t rsxAllocation;
 	rsxAllocation.m_Metadata = allocation.metadata;
 	if (allocation.offset == NO_SPACE)
 	{
