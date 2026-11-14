@@ -1703,8 +1703,10 @@ UniformBlockLayoutHandle CGCMRenderer::CreateUniformBlockLayout(
 		if (size <= sizeof(CVector4) || size == sizeof(CMatrix4))
 		{
 			expandedLayout.m_UniformNames.AddToTail(layout.m_UniformNames[i]);
-			expandedLayout.m_UniformOffsets.AddToTail(layout.m_UniformOffsets[i]);
+			expandedLayout.m_UniformOffsets.AddToTail(
+				layout.m_UniformOffsets[i]);
 			expandedLayout.m_UniformSizes.AddToTail(size);
+
 			continue;
 		}
 
