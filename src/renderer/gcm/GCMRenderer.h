@@ -135,6 +135,8 @@ public:
 	virtual void DestroyTexture(TextureHandle hTexture) GCMGL_OVERRIDE;
 
 	// Render state
+	virtual UniformBlockLayoutHandle CreateUniformBlockLayout(
+		const UniformBlockLayout_t& layout) GCMGL_OVERRIDE;
 	virtual void SetConstantBuffer(
 		BufferHandle hBuffer,
 		UniformBlockLayoutHandle hLayout,

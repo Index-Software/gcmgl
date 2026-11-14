@@ -13,6 +13,7 @@
 #include "utils/UtlMemory.h"
 #include "mathsfury/Maths.h"
 #include "mathsfury/Vector4.h"
+#include <stdio.h>
 #include <string.h>
 #include <sys/memory.h>
 #include <unistd.h>
@@ -1681,6 +1682,50 @@ void CGCMRenderer::DestroyTexture(TextureHandle hTexture)
 		m_TextureResources.Element(textureIndex).m_Alloc);
 
 	m_TextureResources.Remove(hTexture);
+}
+
+UniformBlockLayoutHandle CGCMRenderer::CreateUniformBlockLayout(
+	const UniformBlockLayout_t& layout)
+{
+	const int32 count = layout.m_UniformNames.Count();
+	if (layout.m_UniformOffsets.Count() != count ||
+		layout.m_UniformSizes.Count() != count)
+	{
+		return CRenderer::CreateUniformBlockLayout(layout);
+	}
+
+	UniformBlockLayout_t expandedLayout;
+	expandedLayout.m_Binding = layout.m_Binding;
+	expandedLayout.m_Size = layout.m_Size;
+	for (int32 i = 0; i < count; i++)
+	{
+		const uint32 size = layout.m_UniformSizes[i];
+		if (size <= sizeof(CVector4) || size == sizeof(CMatrix4))
+		{
+			expandedLayout.m_UniformNames.AddToTail(layout.m_UniformNames[i]);
+			expandedLayout.m_UniformOffsets.AddToTail(layout.m_UniformOffsets[i]);
+			expandedLayout.m_UniformSizes.AddToTail(size);
+			continue;
+		}
+
+		const uint32 elementCount = size / sizeof(CVector4);
+		for (uint32 element = 0; element < elementCount; element++)
+		{
+			char name[64];
+			snprintf(
+				name,
+				sizeof(name),
+				"%s[%u]",
+				layout.m_UniformNames[i].Get(),
+				static_cast<unsigned>(element));
+			expandedLayout.m_UniformNames.AddToTail(name);
+			expandedLayout.m_UniformOffsets.AddToTail(
+				layout.m_UniformOffsets[i] + element * sizeof(CVector4));
+			expandedLayout.m_UniformSizes.AddToTail(sizeof(CVector4));
+		}
+	}
+
+	return CRenderer::CreateUniformBlockLayout(expandedLayout);
 }
 
 void CGCMRenderer::SetConstantBuffer(
