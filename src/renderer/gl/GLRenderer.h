@@ -262,6 +262,7 @@ private:
 	GLFWwindow* m_pWindow;
 	bool m_IsVSync;
 	uint32 m_MaxFrameLatency;
+	uint32 m_TargetHeight;
 	int32 m_InstanceBufferIndex;
 };
 

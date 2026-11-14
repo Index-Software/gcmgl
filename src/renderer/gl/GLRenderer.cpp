@@ -51,6 +51,7 @@ CGLRenderer::CGLRenderer() :
 	m_pWindow(GCMGL_NULL),
 	m_IsVSync(false),
 	m_MaxFrameLatency(s_DefaultMaxFrameLatency),
+	m_TargetHeight(0),
 	m_InstanceBufferIndex(0)
 {
 	for (int32 i = 0; i < s_MaxInstanceStagingBuffers; i++)
@@ -127,6 +128,7 @@ bool CGLRenderer::Init(const RendererDesc_t& rendererDesc)
 
 	SetViewport(m_Viewport);
 
+	m_TargetHeight = rendererDesc.m_Height;
 	SetScissor(Rect_t(0, 0, rendererDesc.m_Width, rendererDesc.m_Height));
 
 	DepthStencilState_t depthStencilState;
@@ -389,7 +391,7 @@ void CGLRenderer::SetScissor(const Rect_t& rect)
 {
 	glScissor(
 		rect.m_X,
-		rect.m_Y,
+		int32(m_TargetHeight) - rect.m_Y - int32(rect.m_Height),
 		static_cast<GLsizei>(rect.m_Width),
 		static_cast<GLsizei>(rect.m_Height));
 }
@@ -596,6 +598,7 @@ void CGLRenderer::SetRenderTarget(
 
 		SetFullViewport();
 
+		m_TargetHeight = height;
 		SetScissor(Rect_t(0, 0, width, height));
 
 		return;
@@ -654,6 +657,7 @@ void CGLRenderer::SetRenderTarget(
 			float32(renderTargetResource.m_Height));
 		SetViewport(viewport);
 
+		m_TargetHeight = renderTargetResource.m_Height;
 		SetScissor(Rect_t(
 			0,
 			0,
