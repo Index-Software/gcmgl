@@ -20,6 +20,7 @@ class CUtils
 public:
 	static CFixedString	ReadFile(const CFixedString& path);
 	static CUtlVector<uint8> ReadBinaryFile(const CFixedString& path);
+	static bool FileExists(const CFixedString& path);
 };
 
 #endif // UTILS_H

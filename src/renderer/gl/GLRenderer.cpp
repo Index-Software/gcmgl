@@ -1091,6 +1091,14 @@ ShaderProgramHandle CGLRenderer::CreateShaderProgram(
 	return hProgram;
 }
 
+bool CGLRenderer::HasShaderProgram(const CFixedString& shaderName) const
+{
+	const CFixedString path = CFixedString("shaders/glsl/") + shaderName;
+
+	return CUtils::FileExists(path + CFixedString(".vert")) &&
+		CUtils::FileExists(path + CFixedString(".frag"));
+}
+
 void CGLRenderer::DestroyShaderProgram(ShaderProgramHandle hProgram)
 {
 	int32 programIndex = m_ProgramResources.Find(hProgram);

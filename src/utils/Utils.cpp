@@ -71,3 +71,24 @@ CUtlVector<uint8> CUtils::ReadBinaryFile(const CFixedString& path)
 	
 	return buffer;
 }
+
+bool CUtils::FileExists(const CFixedString& path)
+{
+	CFixedString fullPath = path;
+#ifdef PLATFORM_PS3
+	if (fullPath.find("/dev_hdd0/") != 0)
+	{
+		fullPath = "/dev_hdd0/game/GCGL00001/USRDIR/" + fullPath;
+	}
+#endif // PLATFORM_PS3
+
+	FILE* pFile = fopen(fullPath.c_str(), "rb");
+	if (!pFile)
+	{
+		return false;
+	}
+
+	fclose(pFile);
+
+	return true;
+}

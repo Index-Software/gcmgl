@@ -1337,6 +1337,14 @@ ShaderProgramHandle CGCMRenderer::CreateShaderProgram(
 	return hProgram;
 }
 
+bool CGCMRenderer::HasShaderProgram(const CFixedString& shaderName) const
+{
+	const CFixedString path = CFixedString("shaders/cg/") + shaderName;
+
+	return CUtils::FileExists(path + CFixedString(".vpo")) &&
+		CUtils::FileExists(path + CFixedString(".fpo"));
+}
+
 void CGCMRenderer::DestroyShaderProgram(ShaderProgramHandle hProgram)
 {
 	int32 programIndex = m_ProgramResources.Find(hProgram);

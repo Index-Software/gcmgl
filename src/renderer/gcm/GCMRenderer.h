@@ -100,6 +100,8 @@ public:
 	// Shaders
 	virtual ShaderProgramHandle CreateShaderProgram(
 		const CFixedString& shaderName) GCMGL_OVERRIDE;
+	virtual bool HasShaderProgram(
+		const CFixedString& shaderName) const GCMGL_OVERRIDE;
 	virtual void DestroyShaderProgram(
 		ShaderProgramHandle hProgram) GCMGL_OVERRIDE;
 

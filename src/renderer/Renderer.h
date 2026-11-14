@@ -595,6 +595,7 @@ public:
 
 	virtual ShaderProgramHandle CreateShaderProgram(
 		const CFixedString& shaderName) = 0;
+	virtual bool HasShaderProgram(const CFixedString& shaderName) const = 0;
 	virtual ShaderProgramHandle GetOrCreateShaderProgram(
 		const CFixedString& shaderName) = 0;
 	virtual void DestroyShaderProgram(ShaderProgramHandle hProgram) = 0;
