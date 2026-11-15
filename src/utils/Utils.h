@@ -18,8 +18,19 @@
 class CUtils
 {
 public:
-	static CFixedString	ReadFile(const CFixedString& path);
+	// Relative paths resolve against this root, empty by default
+	static void SetContentRoot(const CFixedString& root);
+	static CFixedString GetFullPath(const CFixedString& path);
+
+	static CFixedString ReadFile(const CFixedString& path);
+	static bool WriteFile(
+		const CFixedString& path,
+		const CFixedString& contents);
+	static bool CreateDirectory(const CFixedString& path);
 	static CUtlVector<uint8> ReadBinaryFile(const CFixedString& path);
+	static bool FileExists(const CFixedString& path);
+private:
+	static CFixedString s_ContentRoot;
 };
 
 #endif // UTILS_H

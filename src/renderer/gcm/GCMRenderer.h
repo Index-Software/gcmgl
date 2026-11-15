@@ -100,6 +100,8 @@ public:
 	// Shaders
 	virtual ShaderProgramHandle CreateShaderProgram(
 		const CFixedString& shaderName) GCMGL_OVERRIDE;
+	virtual bool HasShaderProgram(
+		const CFixedString& shaderName) const GCMGL_OVERRIDE;
 	virtual void DestroyShaderProgram(
 		ShaderProgramHandle hProgram) GCMGL_OVERRIDE;
 
@@ -133,6 +135,8 @@ public:
 	virtual void DestroyTexture(TextureHandle hTexture) GCMGL_OVERRIDE;
 
 	// Render state
+	virtual UniformBlockLayoutHandle CreateUniformBlockLayout(
+		const UniformBlockLayout_t& layout) GCMGL_OVERRIDE;
 	virtual void SetConstantBuffer(
 		BufferHandle hBuffer,
 		UniformBlockLayoutHandle hLayout,

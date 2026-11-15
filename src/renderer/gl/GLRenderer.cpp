@@ -126,9 +126,8 @@ bool CGLRenderer::Init(const RendererDesc_t& rendererDesc)
 	m_ViewportOffset[2] = 0.5f;
 	m_ViewportOffset[3] = 0.0f;
 
-	SetViewport(m_Viewport);
-
 	m_TargetHeight = rendererDesc.m_Height;
+	SetViewport(m_Viewport);
 	SetScissor(Rect_t(0, 0, rendererDesc.m_Width, rendererDesc.m_Height));
 
 	DepthStencilState_t depthStencilState;
@@ -282,7 +281,7 @@ void CGLRenderer::SetEnvironment()
 
 void CGLRenderer::BeginFrame()
 {
-	SetFullViewport();
+	SetRenderTarget(0);
 
 	m_StateDirtyFlags = StateDirtyFlags_t::All;
 	m_InstanceBufferIndex = 0;
@@ -377,7 +376,8 @@ void CGLRenderer::SetViewport(const Viewport_t& viewport)
 
 	glViewport(
 		static_cast<GLint>(viewport.m_X),
-		static_cast<GLint>(viewport.m_Y),
+		static_cast<GLint>(
+			float32(m_TargetHeight) - viewport.m_Y - viewport.m_Height),
 		static_cast<GLsizei>(viewport.m_Width),
 		static_cast<GLsizei>(viewport.m_Height));
 }
@@ -596,9 +596,8 @@ void CGLRenderer::SetRenderTarget(
 		uint32 height;
 		GetFramebufferSize(width, height);
 
-		SetFullViewport();
-
 		m_TargetHeight = height;
+		SetFullViewport();
 		SetScissor(Rect_t(0, 0, width, height));
 
 		return;
@@ -655,9 +654,8 @@ void CGLRenderer::SetRenderTarget(
 			0.0f,
 			float32(renderTargetResource.m_Width),
 			float32(renderTargetResource.m_Height));
-		SetViewport(viewport);
-
 		m_TargetHeight = renderTargetResource.m_Height;
+		SetViewport(viewport);
 		SetScissor(Rect_t(
 			0,
 			0,
@@ -1089,6 +1087,14 @@ ShaderProgramHandle CGLRenderer::CreateShaderProgram(
 	m_ProgramResources.Insert(hProgram, programResource);
 
 	return hProgram;
+}
+
+bool CGLRenderer::HasShaderProgram(const CFixedString& shaderName) const
+{
+	const CFixedString path = CFixedString("shaders/glsl/") + shaderName;
+
+	return CUtils::FileExists(path + CFixedString(".vert")) &&
+		CUtils::FileExists(path + CFixedString(".frag"));
 }
 
 void CGLRenderer::DestroyShaderProgram(ShaderProgramHandle hProgram)

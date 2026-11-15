@@ -16,9 +16,6 @@
 class CTime
 {
 public:
-	CTime();
-	~CTime();
-
 	static void Init();
 	static void Update();
 	static float64 GetTime();
@@ -26,6 +23,7 @@ public:
 	static uint64 GetFrameCount();
 	static float64 GetTimeSinceStartup();
 private:
+	static float64 s_StartTime;
 	static float64 s_CurrentTime;
 	static float64 s_LastTime;
 	static float32 s_DeltaTime;

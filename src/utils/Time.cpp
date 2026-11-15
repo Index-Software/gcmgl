@@ -13,6 +13,7 @@
 #include <GLFW/glfw3.h>
 #endif // !PLATFORM_PS3
 
+float64 CTime::s_StartTime = 0.0;
 float64 CTime::s_CurrentTime = 0.0;
 float64 CTime::s_LastTime = 0.0;
 float32 CTime::s_DeltaTime = 0.0f;
@@ -23,8 +24,9 @@ void CTime::Init()
 {
 	if (!s_IsInitialized)
 	{
-		s_CurrentTime = GetTimeSinceStartup();
-		s_LastTime = s_CurrentTime;
+		s_StartTime = GetTimeSinceStartup();
+		s_CurrentTime = 0.0;
+		s_LastTime = 0.0;
 		s_DeltaTime = 0.0f;
 		s_FrameCount = 0;
 		s_IsInitialized = true;
@@ -39,7 +41,7 @@ void CTime::Update()
 	}
 
 	s_LastTime = s_CurrentTime;
-	s_CurrentTime = GetTimeSinceStartup();
+	s_CurrentTime = GetTimeSinceStartup() - s_StartTime;
 
 	float64 rawDelta = s_CurrentTime - s_LastTime;
 	s_DeltaTime = static_cast<float32>(rawDelta);

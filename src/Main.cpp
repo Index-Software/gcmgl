@@ -12,6 +12,7 @@
 #include "window/Window.h"
 #include "renderer/Renderer.h"
 #include "utils/Time.h"
+#include "utils/Utils.h"
 
 #ifdef GCMGL_DIAGNOSTICS
 #include "utils/DiagnosticsReporter.h"
@@ -43,6 +44,10 @@
 int main(int argc, char* argv[])
 {
 	int32 result = 0;
+
+#ifdef PLATFORM_PS3
+	CUtils::SetContentRoot("/dev_hdd0/game/GCGL00001/USRDIR/");
+#endif // PLATFORM_PS3
 
 	WindowConfig_t windowConfig;
 	windowConfig.m_Width = 1280;
