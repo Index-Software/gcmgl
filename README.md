@@ -238,6 +238,7 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `void SetViewport(const Viewport_t& viewport)`
 - `Viewport_t GetViewport() const`
 - `void SetScissor(const Rect_t& rect)`
+- `void SetDepthBounds(bool isEnabled, float32 minDepth = 0.0f, float32 maxDepth = 1.0f)`
 - `void SetStencilRef(uint32 stencilRef)`
 - `RenderTargetHandle CreateRenderTarget(uint32 width, uint32 height, TextureFormat_t::Enum colorFormat, TextureFormat_t::Enum depthFormat)`
 - `RenderTargetHandle CreateRenderTargetCube(uint32 size, TextureFormat_t::Enum colorFormat, TextureFormat_t::Enum depthFormat)`
@@ -254,6 +255,7 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `void UnmapBuffer(BufferHandle hBuffer)`
 - `BufferHandle CreateStagingBuffer(uint64 size)`
 - `ShaderProgramHandle CreateShaderProgram(const CFixedString& shaderName)`
+- `bool HasShaderProgram(const CFixedString& shaderName) const`
 - `ShaderProgramHandle GetOrCreateShaderProgram(const CFixedString& shaderName)`
 - `void DestroyShaderProgram(ShaderProgramHandle hProgram)`
 - `void ClearShaderCache()`
@@ -308,6 +310,23 @@ gcmgl is a C++ graphics library targeting PlayStation 3 (GCM) and Linux (x86_64,
 - `FrustumVisibility_t::Enum GetAABBFrustumVisibility(const CVector3& center, const CVector3& extent, const Plane_t* pPlanes)`
 - `void BindVertexAttributes(const CVertexLayout* pLayout, uint32 vertexStride, uint32 offset)`
 - `void FlushProgramState()`
+
+### CUtils
+- `void SetContentRoot(const CFixedString& root)`
+- `CFixedString GetFullPath(const CFixedString& path)`
+- `CFixedString ReadFile(const CFixedString& path)`
+- `bool WriteFile(const CFixedString& path, const CFixedString& contents)`
+- `bool CreateDirectory(const CFixedString& path)`
+- `CUtlVector<uint8> ReadBinaryFile(const CFixedString& path)`
+- `bool FileExists(const CFixedString& path)`
+
+### CTime
+- `void Init()`
+- `void Update()`
+- `float64 GetTime()`
+- `float32 GetDeltaTime()`
+- `uint64 GetFrameCount()`
+- `float64 GetTimeSinceStartup()`
 
 ## Build
 

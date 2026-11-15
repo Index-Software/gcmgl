@@ -54,6 +54,10 @@ public:
 	virtual void SetViewport(const Viewport_t& viewport) GCMGL_OVERRIDE;
 	virtual Viewport_t GetViewport() const GCMGL_OVERRIDE;
 	virtual void SetScissor(const Rect_t& rect) GCMGL_OVERRIDE;
+	virtual void SetDepthBounds(
+		bool isEnabled,
+		float32 minDepth = 0.0f,
+		float32 maxDepth = 1.0f) GCMGL_OVERRIDE;
 	virtual void SetStencilRef(uint32 stencilRef) GCMGL_OVERRIDE;
 
 	virtual RenderTargetHandle CreateRenderTarget(
