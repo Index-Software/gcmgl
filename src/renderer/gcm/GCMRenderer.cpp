@@ -551,6 +551,18 @@ void CGCMRenderer::SetScissor(const Rect_t& rect)
 		uint16(rect.m_Height));
 }
 
+void CGCMRenderer::SetDepthBounds(
+	bool isEnabled,
+	float32 minDepth,
+	float32 maxDepth)
+{
+	rsxSetDepthBoundsTestEnable(context, isEnabled ? GCM_TRUE : GCM_FALSE);
+	if (isEnabled)
+	{
+		rsxSetDepthBounds(context, minDepth, maxDepth);
+	}
+}
+
 void CGCMRenderer::SetStencilRef(uint32 stencilRef)
 {
 	rsxSetStencilFunc(context, GCM_ALWAYS, stencilRef, 0xFF);

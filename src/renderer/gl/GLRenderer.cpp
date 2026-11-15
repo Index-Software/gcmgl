@@ -396,6 +396,24 @@ void CGLRenderer::SetScissor(const Rect_t& rect)
 		static_cast<GLsizei>(rect.m_Height));
 }
 
+void CGLRenderer::SetDepthBounds(
+	bool isEnabled,
+	float32 minDepth,
+	float32 maxDepth)
+{
+	if (!GLAD_GL_EXT_depth_bounds_test) return;
+
+	if (!isEnabled)
+	{
+		glDisable(GL_DEPTH_BOUNDS_TEST_EXT);
+
+		return;
+	}
+
+	glEnable(GL_DEPTH_BOUNDS_TEST_EXT);
+	glDepthBoundsEXT(minDepth, maxDepth);
+}
+
 void CGLRenderer::SetStencilRef(uint32 stencilRef)
 {
 	glStencilFunc(GL_ALWAYS, static_cast<GLint>(stencilRef), 0xFF);

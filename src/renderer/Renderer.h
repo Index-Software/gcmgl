@@ -551,6 +551,10 @@ public:
 	virtual void SetViewport(const Viewport_t& viewport) = 0;
 	virtual Viewport_t GetViewport() const = 0;
 	virtual void SetScissor(const Rect_t& rect) = 0;
+	virtual void SetDepthBounds(
+		bool isEnabled,
+		float32 minDepth = 0.0f,
+		float32 maxDepth = 1.0f) = 0;
 	virtual void SetStencilRef(uint32 stencilRef) = 0;
 
 	virtual RenderTargetHandle CreateRenderTarget(
