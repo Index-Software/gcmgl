@@ -1651,7 +1651,7 @@ void CGCMRenderer::SetTextureCompareMode(
 
 	if (compareMode == TextureCompareMode_t::RefToTexture)
 	{
-		textureResource.m_ZFunc = GCM_TEXTURE_ZFUNC_LEQUAL;
+		textureResource.m_ZFunc = GCM_TEXTURE_ZFUNC_GEQUAL;
 	}
 	else
 	{
