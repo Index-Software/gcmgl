@@ -1619,10 +1619,6 @@ void CGCMRenderer::SetTexture(
 		gcmWrapMode = GCM_TEXTURE_MIRRORED_REPEAT;
 	}
 
-	const bool isDepthTexture =
-		textureResource.m_Format == TextureFormat_t::Depth24 ||
-		textureResource.m_Format == TextureFormat_t::Depth24Stencil8;
-
 	const uint8 gamma = textureResource.m_Format == TextureFormat_t::SRGBA8
 		? GCM_TEXTURE_GAMMA_R | GCM_TEXTURE_GAMMA_G | GCM_TEXTURE_GAMMA_B
 		: 0;
@@ -1634,7 +1630,7 @@ void CGCMRenderer::SetTexture(
 		gcmWrapMode,
 		gcmWrapMode,
 		0,
-		isDepthTexture ? GCM_TEXTURE_ZFUNC_NEVER : textureResource.m_ZFunc,
+		textureResource.m_ZFunc,
 		gamma);
 }
 
@@ -1659,7 +1655,7 @@ void CGCMRenderer::SetTextureCompareMode(
 	}
 	else
 	{
-		textureResource.m_ZFunc = GCM_TEXTURE_ZFUNC_LESS;
+		textureResource.m_ZFunc = GCM_TEXTURE_ZFUNC_NEVER;
 	}
 }
 

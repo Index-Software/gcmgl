@@ -298,7 +298,7 @@ private:
 			m_Width(0),
 			m_Height(0),
 			m_MipCount(1),
-			m_ZFunc(GCM_TEXTURE_ZFUNC_LESS),
+			m_ZFunc(GCM_TEXTURE_ZFUNC_NEVER),
 			m_Format(TextureFormat_t::RGBA8),
 			m_IsCubemap(false),
 			m_IsSwizzled(false)
