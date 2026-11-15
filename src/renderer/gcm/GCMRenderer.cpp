@@ -1713,14 +1713,10 @@ UniformBlockLayoutHandle CGCMRenderer::CreateUniformBlockLayout(
 		const uint32 elementCount = size / sizeof(CVector4);
 		for (uint32 element = 0; element < elementCount; element++)
 		{
-			char name[64];
-			snprintf(
-				name,
-				sizeof(name),
-				"%s[%u]",
-				layout.m_UniformNames[i].Get(),
-				static_cast<unsigned>(element));
-			expandedLayout.m_UniformNames.AddToTail(name);
+			char suffix[16];
+			sprintf(suffix, "[%u]", static_cast<unsigned>(element));
+			expandedLayout.m_UniformNames.AddToTail(
+				layout.m_UniformNames[i] + CFixedString(suffix));
 			expandedLayout.m_UniformOffsets.AddToTail(
 				layout.m_UniformOffsets[i] + element * sizeof(CVector4));
 			expandedLayout.m_UniformSizes.AddToTail(sizeof(CVector4));

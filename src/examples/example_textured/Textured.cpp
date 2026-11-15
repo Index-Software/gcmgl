@@ -11,6 +11,7 @@
 #include "window/WindowManager.h"
 #include "renderer/Renderer.h"
 #include "utils/Time.h"
+#include "utils/Utils.h"
 #include "mathsfury/Maths.h"
 #include "../Vertex.h"
 #include "../Camera.h"
@@ -202,13 +203,7 @@ int32 RunTexturedExample(
 	int32 texWidth;
 	int32 texHeight;
 	int32 texChannels;
-	CFixedString fullPath = "assets/texture.png";
-#ifdef PLATFORM_PS3
-	if (fullPath.find("/dev_hdd0/") != 0)
-	{
-		fullPath = "/dev_hdd0/game/GCGL00001/USRDIR/" + fullPath;
-	}
-#endif // PLATFORM_PS3
+	CFixedString fullPath = CUtils::GetFullPath("assets/texture.png");
 	uint8* pRawImageData = stbi_load(
 		fullPath.c_str(),
 		&texWidth,
