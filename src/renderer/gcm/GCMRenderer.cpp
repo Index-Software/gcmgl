@@ -136,7 +136,10 @@ CGCMRenderer::CGCMRenderer() :
 	m_InstanceBufferIndex(0),
 	m_hVertexConstantsProgram(0),
 	m_IsTextureCacheDirty(true),
-	m_IsVertexCacheDirty(true)
+	m_IsVertexCacheDirty(true),
+	m_MaxFrameLatency(s_MaxFrameLatency),
+	m_FrameCount(0),
+	m_HasPendingFrames(false)
 {
 	memset(&m_PostProcessState, 0, sizeof(m_PostProcessState));
 }
@@ -165,6 +168,14 @@ bool CGCMRenderer::Init(const RendererDesc_t& rendererDesc)
 		rendererDesc.m_Height);
 
 	gcmSetFlipMode(rendererDesc.m_IsVSync ? GCM_FLIP_VSYNC : GCM_FLIP_HSYNC);
+
+	m_MaxFrameLatency = rendererDesc.m_MaxFrameLatency;
+	if (m_MaxFrameLatency == 0 || m_MaxFrameLatency > s_MaxFrameLatency)
+	{
+		m_MaxFrameLatency = s_MaxFrameLatency;
+	}
+	m_FrameCount = 0;
+	*reinterpret_cast<vu32*>(gcmGetLabelAddress(s_FlipLabelIndex)) = 0;
 
 	rsxSetColorMask(
 		context,
@@ -282,6 +293,7 @@ void CGCMRenderer::Shutdown()
 
 	rsxFlushBuffer(context);
 	waitFinish();
+	m_FrameCount = 0;
 
 	CGCMPostProcessingRenderer::ShutdownState(m_PostProcessState, m_StaticHeap);
 
@@ -404,7 +416,12 @@ void CGCMRenderer::SetEnvironment()
 
 void CGCMRenderer::BeginFrame()
 {
-	waitFlip();
+	const uint32 framesInFlight = m_MaxFrameLatency - 1;
+	if (m_FrameCount > framesInFlight)
+	{
+		WaitFrame(m_FrameCount - framesInFlight);
+	}
+	m_HasPendingFrames = framesInFlight > 0 && m_FrameCount > 0;
 
 	m_StateDirtyFlags = StateDirtyFlags_t::All;
 	m_InstanceBufferIndex = 0;
@@ -429,12 +446,6 @@ void CGCMRenderer::BeginFrame()
 
 void CGCMRenderer::EndFrame()
 {
-	if (context)
-	{
-		rsxFlushBuffer(context);
-		waitFinish();
-	}
-
 	if (m_PostProcessState.m_pVertexProgram &&
 		m_PostProcessState.m_pQuadVertices &&
 		m_PostProcessState.m_pFragmentProgramBuffer)
@@ -445,11 +456,14 @@ void CGCMRenderer::EndFrame()
 	m_hVertexConstantsProgram = 0;
 
 	flip();
+	m_FrameCount++;
+	rsxSetWriteBackendLabel(context, s_FlipLabelIndex, m_FrameCount);
+	rsxFlushBuffer(context);
 }
 
 uint32 CGCMRenderer::GetMaxFrameLatency() const
 {
-	return 1;
+	return m_MaxFrameLatency;
 }
 
 void CGCMRenderer::Clear(
@@ -897,6 +911,8 @@ RenderTargetHandle CGCMRenderer::CreateRenderTargetCube(
 
 void CGCMRenderer::DestroyRenderTarget(RenderTargetHandle hRenderTarget)
 {
+	WaitPendingFrames();
+
 	const int32 index = m_RenderTargetResources.Find(hRenderTarget);
 	if (index != m_RenderTargetResources.InvalidIndex())
 	{
@@ -1191,6 +1207,8 @@ void CGCMRenderer::UpdateBuffer(
 
 void CGCMRenderer::DestroyBuffer(BufferHandle hBuffer)
 {
+	WaitPendingFrames();
+
 	int32 bufferIndex = m_BufferResources.Find(hBuffer);
 	if (bufferIndex == m_BufferResources.InvalidIndex())
 	{
@@ -1360,6 +1378,8 @@ bool CGCMRenderer::HasShaderProgram(const CFixedString& shaderName) const
 
 void CGCMRenderer::DestroyShaderProgram(ShaderProgramHandle hProgram)
 {
+	WaitPendingFrames();
+
 	int32 programIndex = m_ProgramResources.Find(hProgram);
 	if (programIndex == m_ProgramResources.InvalidIndex())
 	{
@@ -1677,6 +1697,8 @@ void CGCMRenderer::UpdateTexture(
 
 void CGCMRenderer::DestroyTexture(TextureHandle hTexture)
 {
+	WaitPendingFrames();
+
 	int32 textureIndex = m_TextureResources.Find(hTexture);
 	if (textureIndex == m_TextureResources.InvalidIndex())
 	{
@@ -2286,6 +2308,9 @@ void CGCMRenderer::DrawInstanced(
 	const CUtlVector<VertexAttribute_t>& attributes =
 		pInstanceLayout->GetAttributes();
 	const uint32 instanceStride = pInstanceLayout->GetStride();
+
+	WaitPendingFrames();
+
 	StagingBuffer_t& instanceBuffer = m_InstanceBuffers[m_InstanceBufferIndex];
 	const uint32 alignedSize = ((instanceCount * instanceStride) + 127) & ~127;
 
@@ -2792,6 +2817,24 @@ void CGCMRenderer::FlushProgramState()
 		GCM_LOCATION_RSX);
 
 	m_hVertexConstantsProgram = 0;
+}
+
+void CGCMRenderer::WaitFrame(uint32 frame)
+{
+	const vu32* pLabel = reinterpret_cast<const vu32*>(
+		gcmGetLabelAddress(s_FlipLabelIndex));
+	while (*pLabel < frame)
+	{
+		usleep(30);
+	}
+}
+
+void CGCMRenderer::WaitPendingFrames()
+{
+	if (!m_HasPendingFrames) return;
+
+	WaitFrame(m_FrameCount);
+	m_HasPendingFrames = false;
 }
 
 #ifdef PS3_SPU_ENABLED
