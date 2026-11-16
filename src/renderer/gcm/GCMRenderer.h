@@ -258,8 +258,15 @@ protected:
 
 	void InvalidateCachesIfDirty();
 
+	void WaitPendingFrames();
+
 	GCMPostProcessState_t m_PostProcessState;
 private:
+	static const uint32 s_MaxFrameLatency = 2;
+	static const uint32 s_FlipLabelIndex = 254;
+
+	void WaitFrame(uint32 frame);
+
 	struct ProgramResource_t
 	{
 		CUtlMap<CFixedString, rsxProgramConst*> m_VertexProgramConstCache;
@@ -355,6 +362,9 @@ private:
 
 	void* m_pHostAddr;
 	uint32 m_HostSize;
+	uint32 m_MaxFrameLatency;
+	uint32 m_FrameCount;
+	bool m_HasPendingFrames;
 };
 
 #endif // GCM_RENDERER_H

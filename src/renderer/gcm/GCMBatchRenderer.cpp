@@ -545,6 +545,8 @@ void CGCMBatchRenderer::DrawBatchedChunk(
 		m_PipelineState.m_hVertexBuffer);
 	if (vertexBufferIndex == m_BufferResources.InvalidIndex()) return;
 
+	WaitPendingFrames();
+
 	StagingBuffer_t& stagingVertexBuffer = m_StagingVertexBuffer[m_StagingIndex];
 	if (stagingVertexBuffer.m_Size < alignedVertexSize)
 	{
@@ -838,6 +840,8 @@ void CGCMBatchRenderer::DrawIndexedBatchedChunk(
 	{
 		return;
 	}
+
+	WaitPendingFrames();
 
 	StagingBuffer_t& stagingVertexBuffer = m_StagingVertexBuffer[m_StagingIndex];
 	if (stagingVertexBuffer.m_Size < alignedVertexSize)
