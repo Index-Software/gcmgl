@@ -186,6 +186,13 @@ bool CGCMRenderer::Init(const RendererDesc_t& rendererDesc)
 
 	rsxSetColorMaskMrt(context, 0);
 
+	if (is_zcull_bound)
+	{
+		rsxSetZCullControl(context, GCM_ZCULL_LESS, GCM_ZCULL_LONES);
+		rsxSetSCullControl(context, GCM_SCULL_SFUNC_ALWAYS, 0, 0);
+		rsxSetZCullEnable(context, GCM_TRUE, GCM_FALSE);
+	}
+
 	m_Viewport.m_X = 0.0f;
 	m_Viewport.m_Y = 0.0f;
 	m_Viewport.m_Width = float32(display_width);
@@ -488,6 +495,11 @@ void CGCMRenderer::Clear(
 			context,
 			static_cast<uint32>(depth * 0xFFFFFF) << 8 | stencil);
 		gcmClearFlags |= GCM_CLEAR_Z;
+
+		if (is_zcull_bound)
+		{
+			rsxSetClearZCullSurface(context, GCM_TRUE, GCM_FALSE);
+		}
 	}
 
 	if (clearFlags & ClearStencil)
