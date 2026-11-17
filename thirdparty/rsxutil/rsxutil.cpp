@@ -23,6 +23,7 @@ u32 display_height;
 u32 depth_pitch;
 u32 depth_offset;
 u32 *depth_buffer;
+u32 is_zcull_bound = 0;
 
 u32 color_pitch;
 u32 color_offset[FRAME_BUFFER_COUNT];
@@ -232,6 +233,56 @@ void setDrawEnv()
 							   GCM_USER_CLIP_PLANE_DISABLE);
 }
 
+static void initDepthBuffer()
+{
+	const u32 zcull_width = (display_width + GCM_ZCULL_ALIGN_WIDTH - 1) &
+		~(GCM_ZCULL_ALIGN_WIDTH - 1);
+	const u32 zcull_height = (display_height + GCM_ZCULL_ALIGN_HEIGHT - 1) &
+		~(GCM_ZCULL_ALIGN_HEIGHT - 1);
+	const u32 depth_size = (depth_pitch*zcull_height + GCM_TILE_ALIGN_SIZE - 1) &
+		~(GCM_TILE_ALIGN_SIZE - 1);
+
+	depth_buffer = (u32*)rsxMemalign(GCM_TILE_ALIGN_OFFSET, depth_size);
+	rsxAddressToOffset(depth_buffer,&depth_offset);
+
+	// Z-cull needs the depth buffer in a tile region with 64 multiple sizes
+	is_zcull_bound = 0;
+	if (gcmSetTileInfo(
+			0,
+			GCM_LOCATION_RSX,
+			depth_offset,
+			depth_size,
+			depth_pitch,
+			GCM_COMPMODE_DISABLED,
+			0,
+			0) != 0 ||
+		gcmBindTile(0) != 0)
+	{
+		return;
+	}
+
+	if (gcmBindZcull(
+			0,
+			depth_offset,
+			zcull_width,
+			zcull_height,
+			0,
+			GCM_ZCULL_Z24S8,
+			GCM_SURFACE_CENTER_1,
+			GCM_ZCULL_LESS,
+			GCM_ZCULL_LONES,
+			GCM_SCULL_SFUNC_ALWAYS,
+			0,
+			0) != 0)
+	{
+		gcmUnbindTile(0);
+
+		return;
+	}
+
+	is_zcull_bound = 1;
+}
+
 void initScreen(
 	void *host_addr,
 	u32 size,
@@ -250,7 +301,11 @@ void initScreen(
 	gcmSetFlipMode(GCM_FLIP_VSYNC);
 
 	color_pitch = display_width*color_depth;
-	depth_pitch = display_width*zs_depth;
+	depth_pitch = gcmGetTiledPitchSize(display_width*zs_depth);
+	if (depth_pitch < display_width*zs_depth)
+	{
+		depth_pitch = display_width*zs_depth;
+	}
 
 	for (u32 i=0;i < FRAME_BUFFER_COUNT;i++) {
 		color_buffer[i] = (u32*)rsxMemalign(64,(display_height*color_pitch));
@@ -258,8 +313,7 @@ void initScreen(
 		gcmSetDisplayBuffer(i,color_offset[i],color_pitch,display_width,display_height);
 	}
 
-	depth_buffer = (u32*)rsxMemalign(64, display_height*depth_pitch);
-	rsxAddressToOffset(depth_buffer,&depth_offset);
+	initDepthBuffer();
 }
 
 void waitFlip()
